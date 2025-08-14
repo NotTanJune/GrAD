@@ -12,8 +12,6 @@ TABLE = os.getenv("APPMGR_DDB_TABLE", "emergency-hackathon")  # PK: username (S)
 _ddb = boto3.resource("dynamodb", region_name=REGION)
 _tbl = _ddb.Table(TABLE)
 
-# -------------------- utils --------------------
-
 
 def _now() -> str:
     return datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z"
@@ -26,23 +24,16 @@ def _to_int(v: Any, default: int) -> int:
         return default
 
 
-# -------------------- getters --------------------
-
-
 def get_all_states(username: str) -> Dict[str, Dict[str, Any]]:
     """Return { '<app_id>': {status, priority, updated_at}, ... } or {}."""
     resp = _tbl.get_item(Key={"username": username})
     item = resp.get("Item") or {}
     apps = item.get("apps") or {}
-    # ensure dict
     return apps if isinstance(apps, dict) else {}
 
 
 def get_state(username: str, app_id: int) -> Optional[Dict[str, Any]]:
     return get_all_states(username).get(str(app_id))
-
-
-# -------------------- core writer --------------------
 
 
 def upsert_app_map(username: str, app_id: int, *, status: str, priority: int) -> None:
@@ -54,7 +45,6 @@ def upsert_app_map(username: str, app_id: int, *, status: str, priority: int) ->
     def _set_child():
         _tbl.update_item(
             Key={"username": username},
-            # NOTE: single child path, no overlap with parent in same call
             UpdateExpression="SET #apps.#aid = :val, updated_at = :t",
             ExpressionAttributeNames={"#apps": "apps", "#aid": str(app_id)},
             ExpressionAttributeValues={
@@ -71,9 +61,7 @@ def upsert_app_map(username: str, app_id: int, *, status: str, priority: int) ->
         _set_child()
     except ClientError as e:
         msg = (e.response.get("Error", {}) or {}).get("Message", "").lower()
-        # “document path … invalid” / “path … invalid for update”
         if "document path" in msg or "invalid for update" in msg or "path" in msg:
-            # Create/repair the parent map in a separate call
             _tbl.update_item(
                 Key={"username": username},
                 UpdateExpression="SET #apps = if_not_exists(#apps, :empty), updated_at = :t",
@@ -83,9 +71,6 @@ def upsert_app_map(username: str, app_id: int, *, status: str, priority: int) ->
             _set_child()
         else:
             raise
-
-
-# -------------------- friendly ops --------------------
 
 
 def put_state(username: str, app_id: int, status: str, priority: int) -> None:
@@ -124,15 +109,11 @@ def delete_state(username: str, app_id: int) -> None:
         code = (e.response.get("Error", {}) or {}).get("Code")
         if code != "ConditionalCheckFailedException":
             raise
-        # apps or apps.<id> didn't exist; just bump updated_at
         _tbl.update_item(
             Key={"username": username},
             UpdateExpression="SET updated_at = :t",
             ExpressionAttributeValues={":t": _now()},
         )
-
-
-# -------------------- view helper --------------------
 
 
 def overlay_states(username: str, app_objs: list) -> None:

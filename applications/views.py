@@ -55,21 +55,18 @@ def delete_application(request, pk):
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         )
-        # Batch delete up to 1000 in chunks (unlikely to exceed in dev)
         keys = [
             {"Key": att.file.name}
             for att in app.attachments.all()
             if att.file and att.file.name
         ]
         if keys:
-            # Delete in chunks of 1000
             for i in range(0, len(keys), 1000):
                 s3.delete_objects(Bucket=bucket, Delete={"Objects": keys[i : i + 1000]})
 
     username = request.user.username
     app.delete()
 
-    # Re-number remaining applications for this user and mirror to DDB
     remaining = list(
         Application.objects.filter(user=request.user)
         .order_by("priority", "-last_updated", "id")
@@ -93,7 +90,6 @@ def delete_application(request, pk):
 @login_required
 def download_attachment(request, pk):
     att = get_object_or_404(Attachment, pk=pk)
-    # Only allow owner of the application
     if att.application.user_id != request.user.id:
         return HttpResponseForbidden("Not allowed")
 
@@ -107,7 +103,7 @@ def download_attachment(request, pk):
     presigned = s3.generate_presigned_url(
         "get_object",
         Params={"Bucket": bucket, "Key": att.file.name},
-        ExpiresIn=300,  # 5 minutes
+        ExpiresIn=300,
     )
     return HttpResponseRedirect(presigned)
 
@@ -121,7 +117,6 @@ def applications_reorder(request):
     except Exception:
         return HttpResponseBadRequest("Bad JSON")
 
-    # allow only the user's apps
     apps = Application.objects.filter(user=request.user, id__in=order).only(
         "id", "status"
     )
@@ -133,7 +128,6 @@ def applications_reorder(request):
             Application.objects.filter(id=app_id, user=request.user).update(
                 priority=idx, last_updated=timezone.now()
             )
-            # mirror to DDB so future overlays of STATUS don't disturb order
             ddb.update_priority(request.user.username, app_id, priority=idx)
 
     return JsonResponse({"ok": True, "order": sequence})
@@ -142,15 +136,13 @@ def applications_reorder(request):
 @login_required
 @ensure_csrf_cookie
 def dashboard(request):
-    # 1) order by SQL priority (source of truth), then recent updates
     apps = list(
         Application.objects.filter(user=request.user).order_by(
             "priority", "-last_updated", "id"
         )
     )
 
-    # 2) overlay ONLY STATUS from DDB (do not overlay priority)
-    states = get_all_states(request.user.username)  # dict[str(app_id)] -> state
+    states = get_all_states(request.user.username)
     for a in apps:
         st = states.get(str(a.id))
         if st and "status" in st:
@@ -169,7 +161,6 @@ def dashboard(request):
     )
 
 
-# comment
 @login_required
 def application_create(request):
     app = None
@@ -179,15 +170,12 @@ def application_create(request):
             app = form.save(commit=False)
             app.user = request.user
             app.status = "draft"
-            # Set next priority: count existing apps for this user + 1
             next_priority = Application.objects.filter(user=request.user).count() + 1
             app.priority = next_priority
             app.save()
-            # your rule: mark as submitted right away
             app.status = "submitted"
             app.save(update_fields=["status"])
 
-            # mirror to DynamoDB with correct priority
             put_state(
                 request.user.username,
                 app.id,
@@ -216,9 +204,7 @@ def application_update_status(request, pk):
         new_status = request.POST.get("status")
         valid = dict(Application._meta.get_field("status").choices)
         if new_status in valid:
-            # keep a local copy for immediate re-render
             app.status = new_status
-            # preserve priority from DDB (or app.priority as fallback)
             update_status(
                 request.user.username,
                 app.id,
@@ -261,15 +247,6 @@ def sop_assistant(request):
     return render(request, "applications/sop_assistant.html", {"outline": outline})
 
 
-# --- text extraction helpers ---
-def _read_s3_bytes(file_field):
-    file_field.open("rb")
-    try:
-        return file_field.read()
-    finally:
-        file_field.close()
-
-
 def extract_text_from_bytes(filename, data: bytes) -> str:
     name = (filename or "").lower()
     if name.endswith(".txt"):
@@ -284,7 +261,6 @@ def extract_text_from_bytes(filename, data: bytes) -> str:
     return data.decode("utf-8", errors="ignore")
 
 
-# --- optional web search (Tavily) ---
 def fetch_sop_expectations(college: str, program: str) -> str:
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
@@ -305,7 +281,6 @@ def fetch_sop_expectations(college: str, program: str) -> str:
         return ""
 
 
-# --- Groq call ---
 def groq_stream_markdown(sop_text: str, college: str, program: str, notes: str):
     """
     Stream **markdown** chunks from Groq. We instruct the model to output
@@ -360,7 +335,6 @@ def sop_assistant(request):
     apps = Application.objects.filter(user=request.user).order_by(
         "priority", "-last_updated"
     )
-    # We don’t pre-populate SOPs until an app is chosen (HTMX will load them).
     return render(request, "applications/sop_assistant.html", {"apps": apps})
 
 
@@ -408,7 +382,6 @@ def sop_sops_for_app(request):
     sops = Attachment.objects.filter(
         application__user=request.user, application_id=int(app_id), doc_type="SOP"
     ).order_by("-created_at")
-    # render just the SOP select block (same structure the page expects)
     html = render_to_string(
         "applications/partials/_sop_select.html", {"sops": sops}, request=request
     )
@@ -419,7 +392,7 @@ def signup(request):
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
-            user = form.save()  # UserCreationForm hashes password automatically
+            user = form.save()
             auth_login(request, user)
             return redirect("applications:dashboard")
     else:

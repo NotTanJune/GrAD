@@ -1,6 +1,5 @@
 {# templates/applications/partials/app_row.html #}
 <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors duration-200" data-id="{{ app.id|add:0 }}">
-  <!-- Drag handle -->
   <td class="px-4 py-4 cursor-grab drag-handle select-none text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" title="Drag to reorder">
     <div class="flex items-center justify-center h-full">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -22,7 +21,7 @@
     </span>
   </td>
 
-  <!-- Status (modern dropdown) -->
+  <!-- Status -->
   <td class="align-middle px-4">
     <div class="relative" x-data="{ open: false }">
       {# Current status button #}

@@ -81,23 +81,20 @@
 
 {# Drag + reorder logic #}
   <script>
-    // CSRf helper
+
     function getCookie(name){
       const v = `; ${document.cookie}`;
       const p = v.split(`; ${name}=`);
       if (p.length === 2) return p.pop().split(';').shift();
     }
 
-    // Status update function
     async function updateStatus(newStatus) {
       const row = event.target.closest('tr');
       const appId = row.dataset.id;
       const button = row.querySelector('.status-button');
 
-      // Normalize
       const statusKey = String(newStatus || '').toUpperCase();
 
-      // Immediately update the button appearance
       updateButtonColor(button, statusKey);
 
       try{
@@ -120,10 +117,8 @@
       }
     }
 
-    // Helper function to update button color
     function updateButtonColor(button, statusUpper) {
       if (!button) return;
-      // Remove prior color classes (simple but effective)
       button.classList.remove(
         'bg-emerald-100','text-emerald-800','dark:bg-emerald-900/40','dark:text-emerald-200','hover:bg-emerald-200','dark:hover:bg-emerald-900/60','focus:ring-emerald-500',
         'bg-red-100','text-red-800','dark:bg-red-900/40','dark:text-red-200','hover:bg-red-200','dark:hover:bg-red-900/60','focus:ring-red-500',
@@ -156,7 +151,6 @@
       if (span) span.textContent = statusUpper.charAt(0) + statusUpper.slice(1).toLowerCase().replace('_',' ');
     }
 
-    // Listen for HX trigger from server after deletion and renumber priorities in DOM
     document.body.addEventListener('htmx:afterOnLoad', function(evt){
       const trig = evt.detail.xhr.getResponseHeader('HX-Trigger');
       if (trig && trig.indexOf('renumber-priorities') !== -1) {
@@ -183,25 +177,21 @@
       scroll: true,
       distance: 5,
 
-      // Create a proper drag helper that maintains table structure
       helper: function(event, tr){
         const $tr = $(tr);
         const $table = $tr.closest('table');
         const $clone = $tr.clone();
         
-        // Get the original table structure
         const $headerRow = $table.find('thead tr');
         const $cloneCells = $clone.children();
         const $headerCells = $headerRow.children();
         
-        // Match column widths exactly
         $cloneCells.each(function(i){
           if ($headerCells.eq(i).length) {
             $(this).width($headerCells.eq(i).outerWidth());
           }
         });
 
-        // Style the clone
         const isDark = document.documentElement.classList.contains('dark');
         $clone.css({
           'background': isDark ? '#1e293b' : '#fff',
@@ -214,7 +204,6 @@
           'width': $table.outerWidth()
         });
 
-        // Style all cells in the clone
         $clone.find('td').css({
           'background': 'transparent',
           'border': 'none',
@@ -225,17 +214,14 @@
       },
 
       start: function(event, ui){
-        // full-row placeholder
+
         ui.placeholder.html('<td colspan="6"></td>');
 
-        // Get table position for alignment
         const tableEl = $tbody.closest('table').get(0);
         const tableRect = tableEl.getBoundingClientRect();
         
-        // Set cursor offset for natural feel
         $(this).sortable('option', 'cursorAt', { left: 20, top: 10 });
         
-        // Force the helper to stay aligned with the table
         const updatePosition = function() {
           const currentRect = tableEl.getBoundingClientRect();
           ui.helper.css({
@@ -244,16 +230,13 @@
           });
         };
         
-        // Update position immediately and on scroll
         updatePosition();
         $(window).on('scroll resize', updatePosition);
-        
-        // Clean up on stop
+
         ui.helper.data('updatePosition', updatePosition);
       },
 
       stop: function(event, ui) {
-        // Clean up event listeners
         const updatePosition = ui.helper.data('updatePosition');
         if (updatePosition) {
           $(window).off('scroll resize', updatePosition);
@@ -261,18 +244,15 @@
       },
 
       update: async function(){
-        // New order
         const order = $tbody.find('tr[data-id]').map(function(){
           return parseInt(this.dataset.id, 10);
         }).get();
 
-        // Renumber priorities in the DOM (post-drop only)
         $tbody.find('tr[data-id]').each(function(i, el){
           const cell = el.querySelector('[data-cell="priority"]') || el.children[2];
           if (cell) cell.textContent = String(i + 1);
         });
 
-        // Persist
         try{
           const res = await fetch("{% url 'applications:applications_reorder' %}", {
             method: "POST",

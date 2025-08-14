@@ -53,7 +53,7 @@ class Document(models.Model):
     )
     doc_type = models.CharField(max_length=10, choices=DOC_TYPES)
     title = models.CharField(max_length=255)
-    content = models.TextField(blank=True)  # store markdown/plain text
+    content = models.TextField(blank=True)
     file = models.FileField(upload_to="docs/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -124,9 +124,7 @@ class Attachment(models.Model):
     )
     doc_type = models.CharField(max_length=10, choices=DOC_TYPES)
     title = models.CharField(max_length=255)
-    file = models.FileField(
-        upload_to="docs/"
-    )  # path will actually be S3; key set by us
+    file = models.FileField(upload_to="docs/")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

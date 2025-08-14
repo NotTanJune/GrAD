@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Grab a Degree</title>
 
-  <!-- Set theme before paint -->
   <script>
     (function () {
       const saved = localStorage.getItem("theme");
@@ -15,16 +14,13 @@
     })();
   </script>
 
-  <!-- HTMX + _hyperscript + Alpine.js -->
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-  <!-- jQuery + jQuery UI (Sortable) -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.min.js"></script>
 
-  <!-- Tailwind (with forms + typography plugins) -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
   <script>
     tailwind.config = {
@@ -51,9 +47,7 @@
     }
   </style>
 
-  <!-- Drag visuals (only the few we need) -->
   <style>
-    /* Floating helper (clone) that follows the cursor */
     .ui-sortable-helper {
       position: fixed !important;
       pointer-events: none;
@@ -62,14 +56,12 @@
       margin: 0 !important;
     }
 
-    /* Drag wrapper styling */
     .drag-wrapper {
       background: transparent;
       border-radius: 8px;
       overflow: hidden;
     }
 
-    /* Placeholder: thin dashed guide line that spans the row */
     .ui-sortable-placeholder { 
       visibility: visible !important; 
       background: transparent !important; 
@@ -82,7 +74,6 @@
       line-height: 0 !important;
     }
 
-    /* Smooth sibling motion + no text selection during drag */
     #apps-table tr { 
       transition: transform .2s cubic-bezier(.2,.8,.2,1), background-color .12s; 
     }
@@ -97,7 +88,6 @@
       cursor: grabbing; 
     }
 
-    /* Better visual feedback during drag */
     .ui-sortable-helper .drag-handle {
       opacity: 0.4;
     }
@@ -116,7 +106,6 @@
             <span class="font-black leading-none">GrAD</span>
           </a>
 
-          <!-- Left-aligned nav with padding from logo (only when logged in) -->
           <div class="flex-1 min-w-0">
             {% if user.is_authenticated %}
             <ul class="flex items-center gap-8 pl-6">
@@ -179,7 +168,6 @@
     <div class="mt-2">Built for Emergency GPT Hackathon 2025</div>
   </footer>
 
-  <!-- Simple confirm modal -->
   <div id="confirmModal" class="fixed inset-0 hidden flex items-center justify-center bg-black/50 z-[10000]">
     <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-5 shadow-xl ring-1 ring-black/10 dark:ring-white/10">
       <h3 class="text-lg font-semibold mb-2 text-slate-900 dark:text-slate-100">Confirm deletion</h3>
@@ -216,7 +204,6 @@
       cancelBtn.addEventListener('click', onCancel);
       modal.classList.remove('hidden');
 
-      // prevent immediate submission; we will submit on confirm
       return false;
     }
     window.confirmDeleteApplication = confirmDeleteApplication;

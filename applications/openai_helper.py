@@ -3,7 +3,6 @@ from typing import Optional
 
 
 def generate_sop_outline(profile: str, program: str, constraints: str = "") -> str:
-    # Lazy import; keep optional
     api_key = os.getenv("OPENAI_API_KEY", "")
     prompt = f"""You are an expert admissions editor.
     Draft a bullet-point outline for an SOP.

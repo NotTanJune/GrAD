@@ -28,7 +28,6 @@
       </select>
     </div>
 
-    <!-- SOP picker (HTMX target) -->
     <div id="sop_select_wrap">
       <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">SOP file</label>
       <select id="attachment_id" class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
@@ -55,7 +54,6 @@
       Analyze
     </button>
 
-    <!-- Optional: quick link to download original SOP when selected -->
     <a id="dl-link" class="text-sm underline hidden" target="_blank" rel="noopener">download chosen SOP</a>
 
     <span id="stream-status" class="badge"></span>
@@ -71,7 +69,6 @@
     </button>
   </div>
 
-  <!-- Pretty markdown via Tailwind Typography -->
   <article
     id="stream-md"
     class="prose prose-slate prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
@@ -79,11 +76,8 @@
   </article>
 </section>
 
-<!-- Marked.js for client-side markdown rendering -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>          
 <script>
-  // ---------- helpers ----------
   function val(id){ return (document.getElementById(id)?.value || '').trim(); }
   function esc(s){ return encodeURIComponent(s || ''); }
 
@@ -114,7 +108,6 @@
   });
   updateButtonState();
 
-  // ---------- streaming markdown -> HTML ----------
   let mdBuffer = "";
 
   btn?.addEventListener('click', async () => {
@@ -168,7 +161,6 @@
     }
   });
 
-  // ---------- download .md ----------
   dlBtn?.addEventListener('click', () => {
     if (!mdBuffer) return;
     const blob = new Blob([mdBuffer], { type: "text/markdown;charset=utf-8" });

@@ -40,7 +40,6 @@
 </form>
 
 {% if app %}
-  <!-- Upload panels appear once app exists -->
   <div class="grid md:grid-cols-2 gap-6 mt-8">
     <!-- SOP -->
     <section class="card p-6 md:p-8">
@@ -304,7 +303,7 @@
 
   async function multiUploadOther() {
     const input = document.getElementById('other-files');
-    const docType = document.getElementById('other-type').value; // RESUME or OTHER
+    const docType = document.getElementById('other-type').value;
     const statusEl = document.getElementById('other-status');
     const btn = document.getElementById('btn-upload-other');
 
