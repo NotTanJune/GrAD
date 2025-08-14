@@ -43,7 +43,16 @@ def application_attachments(request, pk: int):
 @login_required
 @require_POST
 def delete_application(request, pk):
-    app = get_object_or_404(Application, pk=pk, user=request.user)
+    # Be defensive to avoid surfacing a 404 page to htmx requests.
+    # If not found, return an empty response so the row can be swapped out gracefully.
+    app = Application.objects.filter(pk=pk).first()
+    if app is None:
+        resp = HttpResponse("")
+        resp["HX-Trigger"] = "renumber-priorities"
+        return resp
+
+    if app.user_id != request.user.id:
+        return HttpResponseForbidden("Not allowed")
 
     # Delete any S3 files for attachments
     aws_region = os.getenv("AWS_S3_REGION_NAME", "ap-southeast-1")
