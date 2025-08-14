@@ -98,7 +98,7 @@
   <!-- Top gradient nav -->
   <header class="sticky top-0 z-30">
     <div class="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 shadow-lg">
-      <nav class="container">
+      <nav class="container" x-data="{ mobileOpen: false }">
         <div class="py-4 flex items-center gap-6 flex-wrap md:flex-nowrap text-white">
           <!-- Brand: far left -->
           <a href="/" class="flex items-center gap-2 font-bold text-2xl tracking-tight hover:scale-105 transition-transform">
@@ -108,7 +108,7 @@
 
           <div class="flex-1 min-w-0">
             {% if user.is_authenticated %}
-            <ul class="flex items-center gap-8 pl-6">
+            <ul class="hidden md:flex items-center gap-8 pl-6">
               <li>
                 <a href="/applications/new/" class="nav-link text-white/90 hover:text-white font-medium">New Application</a>
               </li>
@@ -137,12 +137,37 @@
             </button>
 
             {% if user.is_authenticated %}
-              <form action="/accounts/logout/" method="post" class="inline">
+              <form action="/accounts/logout/" method="post" class="hidden md:inline">
                 {% csrf_token %}
                 <button class="btn-ghost bg-white/10 text-white hover:bg-white/20 font-medium transition-all duration-200">Logout</button>
               </form>
             {% else %}
-              <a href="/accounts/login/" class="btn-ghost bg-white/10 text-white hover:bg-white/20 font-medium transition-all duration-200">Log in</a>
+              <a href="/accounts/login/" class="hidden md:inline btn-ghost bg-white/10 text-white hover:bg-white/20 font-medium transition-all duration-200">Log in</a>
+            {% endif %}
+
+            <!-- Mobile menu toggle -->
+            <button @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen"
+                    class="md:hidden btn-ghost bg-white/10 text-white hover:bg-white/20"
+                    title="Menu">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile dropdown panel -->
+        <div class="md:hidden text-white/90" x-show="mobileOpen" x-transition.opacity x-transition.duration.150ms>
+          <div class="pb-4 space-y-2">
+            {% if user.is_authenticated %}
+              <a href="/applications/new/" class="block btn-ghost bg-white/10 hover:bg-white/20">New Application</a>
+              <a href="/applications/sop-assistant/" class="block btn-ghost bg-white/10 hover:bg-white/20">SOP Assistant</a>
+              <form action="/accounts/logout/" method="post">
+                {% csrf_token %}
+                <button class="w-full text-left btn-ghost bg-white/10 hover:bg-white/20">Logout</button>
+              </form>
+            {% else %}
+              <a href="/accounts/login/" class="block btn-ghost bg-white/10 hover:bg-white/20">Log in</a>
             {% endif %}
           </div>
         </div>

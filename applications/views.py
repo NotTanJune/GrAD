@@ -43,9 +43,8 @@ def application_attachments(request, pk: int):
 @login_required
 @require_POST
 def delete_application(request, pk):
-    is_htmx = (
-        request.headers.get("HX-Request", "").lower() == "true"
-        or bool(request.META.get("HTTP_HX_REQUEST"))
+    is_htmx = request.headers.get("HX-Request", "").lower() == "true" or bool(
+        request.META.get("HTTP_HX_REQUEST")
     )
     # Be defensive to avoid surfacing a 404 page to htmx requests.
     # If not found, return an empty response so the row can be swapped out gracefully.
