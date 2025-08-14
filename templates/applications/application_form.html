@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-6">
+  <h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">New Application</h1>
+  <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Create the application, then upload SOP/LOR and other documents.</p>
+</div>
+
+<!-- Create form -->
+<form method="post" class="card p-6 md:p-8 space-y-6 max-w-2xl">
+  {% csrf_token %}
+  <div>
+    <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">College Name</label>
+    {{ form.college_name }}
+  </div>
+  <div>
+    <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Program Name</label>
+    {{ form.program_name }}
+  </div>
+  <div>
+    <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Portal URL</label>
+    {{ form.portal_url }}
+  </div>
+  <div>
+    <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Notes</label>
+    {{ form.notes }}
+  </div>
+  <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <svg class="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <p class="text-sm text-blue-700 dark:text-blue-300">Status will be set to <b>Submitted</b> after you save.</p>
+  </div>
+  <button class="btn-primary py-3 text-base font-semibold shadow-lg hover:shadow-xl">
+    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+    </svg>
+    Create Application
+  </button>
+</form>
+
+{% if app %}
+  <!-- Upload panels appear once app exists -->
+  <div class="grid md:grid-cols-2 gap-6 mt-8">
+    <!-- SOP -->
+    <section class="card p-6 md:p-8">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+          <svg class="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Upload SOP</h2>
+          <p class="text-sm text-slate-600 dark:text-slate-400">Multiple files accepted</p>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Accepted: PDF, DOC, DOCX, TXT
+        </div>
+        <input id="sop-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
+               class="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                      text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+        <button id="btn-upload-sop" class="btn-primary w-full" onclick="multiUpload('SOP')" disabled>
+          <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload SOPs
+        </button>
+        <div id="sop-status" class="text-sm text-slate-600 dark:text-slate-300"></div>
+      </div>
+    </section>
+
+    <!-- LOR -->
+    <section class="card p-6 md:p-8">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+          <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Upload LOR</h2>
+          <p class="text-sm text-slate-600 dark:text-slate-400">Multiple files accepted</p>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Accepted: PDF, DOC, DOCX, TXT
+        </div>
+        <input id="lor-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
+               class="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                      text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+        <button id="btn-upload-lor" class="btn-primary w-full" onclick="multiUpload('LOR')" disabled>
+          <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload LORs
+        </button>
+        <div id="lor-status" class="text-sm text-slate-600 dark:text-slate-300"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Upload both -->
+  <div class="mt-6">
+    <button id="btn-upload-all" class="btn-ghost w-full py-3" onclick="uploadAll()" disabled>
+      <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+      </svg>
+      Upload All Documents
+    </button>
+    <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">Enabled when both SOP and LOR have files selected.</div>
+  </div>
+
+  <!-- Other docs -->
+  <section class="card p-6 md:p-8 mt-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+        <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Other Documents</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Resume, CV, or any additional files</p>
+      </div>
+    </div>
+    <div class="space-y-4">
+      <div class="flex flex-col sm:flex-row gap-3">
+        <select id="other-type"
+                class="w-full sm:w-auto rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                       text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+          <option value="RESUME">Resume/CV</option>
+          <option value="OTHER">Other</option>
+        </select>
+        <input id="other-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
+               class="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                      text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+        <button id="btn-upload-other" class="btn-primary px-6" onclick="multiUploadOther()">
+          <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Upload
+        </button>
+      </div>
+      <div id="other-status" class="text-sm text-slate-600 dark:text-slate-300"></div>
+    </div>
+  </section>
+
+  <!-- Attachments list -->
+  <section class="card p-6 md:p-8 mt-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Attachments</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400">{{ app.college_name }} / {{ app.program_name }}</p>
+      </div>
+    </div>
+    <ul id="attachments-list" class="space-y-3">
+      {% for a in app.attachments.all %}
+        <li class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 hover:shadow-sm transition-shadow">
+          <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <svg class="h-4 w-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <span class="badge text-xs">{{ a.doc_type }}</span>
+            <span class="font-medium text-slate-900 dark:text-slate-100 ml-2">{{ a.title }}</span>
+          </div>
+          <a class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors" href="{% url 'applications:attachment_download' a.id %}">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            View
+          </a>
+        </li>
+      {% empty %}
+        <li id="attachments-empty" class="text-center py-8 text-slate-500 dark:text-slate-400">
+          <svg class="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <p class="text-sm">No files uploaded yet</p>
+          <p class="text-xs mt-1">Upload your documents above to get started</p>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Big finish button at end -->
+    <div class="mt-8 text-right">
+      <a href="{% url 'applications:dashboard' %}" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        Finish
+      </a>
+    </div>
+  </section>
+
+  <script>
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  function appendAttachment(docType, title, _unused, id) {
+    const list = document.getElementById('attachments-list');
+    const empty = document.getElementById('attachments-empty');
+    if (empty) empty.remove();
+    const li = document.createElement('li');
+    li.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm flex items-center gap-2';
+    li.innerHTML = `<span class="badge">${docType}</span>
+      <span class="font-medium">${title}</span>
+      <a class="underline text-indigo-600 dark:text-indigo-400 ml-auto" href="/applications/attachments/${id}/download/">view</a>`;
+    list.prepend(li);
+  }
+
+  async function uploadOne(file, docType, statusEl) {
+    const ct = file.type || "application/octet-stream";
+    const presign = await fetch(`/api/presign/?application_id={{ app.id }}&doc_type=${docType}&filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(ct)}`);
+    if (!presign.ok) throw new Error("presign failed");
+    const data = await presign.json();
+
+    const form = new FormData();
+    Object.entries(data.post.fields).forEach(([k,v]) => form.append(k,v));
+    form.append("file", file);
+
+    const s3Resp = await fetch(data.post.url, { method: "POST", body: form });
+    if (!s3Resp.ok) throw new Error("upload to s3 failed");
+
+    const finalize = await fetch("/api/finalize/", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-CSRFToken": getCookie("csrftoken") },
+      body: JSON.stringify({
+        application_id: "{{ app.id }}",
+        doc_type: docType,
+        key: data.key,
+        title: file.name
+      }),
+      credentials: "same-origin"
+    });
+    if (!finalize.ok) throw new Error("finalize failed");
+    const res = await finalize.json();
+    appendAttachment(docType, res.title, null, res.id);
+    statusEl.textContent = `Saved: ${res.title}`;
+  }
+
+  async function multiUpload(docType) {
+    const inputId  = (docType === "SOP") ? "sop-files" : "lor-files";
+    const statusId = (docType === "SOP") ? "sop-status" : "lor-status";
+    const input = document.getElementById(inputId);
+    const statusEl = document.getElementById(statusId);
+    const btn = event?.target;
+
+    const files = Array.from(input.files || []);
+    if (!files.length) { statusEl.textContent = "Pick files first."; return; }
+
+    if (btn) { btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed'); }
+    statusEl.textContent = "Uploading…";
+    try {
+      for (const f of files) await uploadOne(f, docType, statusEl);
+      statusEl.textContent = "All done.";
+      input.value = "";
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed'); }
+    }
+    updateButtons();
+  }
+
+  async function uploadAll() {
+    const sopInput = document.getElementById('sop-files');
+    const lorInput = document.getElementById('lor-files');
+    const sopStatus = document.getElementById('sop-status');
+    const lorStatus = document.getElementById('lor-status');
+    const btnAll = document.getElementById('btn-upload-all');
+
+    btnAll.disabled = true; btnAll.classList.add('opacity-50','cursor-not-allowed');
+    try {
+      sopStatus.textContent = "Uploading SOP…";
+      for (const f of Array.from(sopInput.files || [])) await uploadOne(f, "SOP", sopStatus);
+      lorStatus.textContent = "Uploading LOR…";
+      for (const f of Array.from(lorInput.files || [])) await uploadOne(f, "LOR", lorStatus);
+      sopInput.value = ""; lorInput.value = "";
+      sopStatus.textContent = "SOP upload complete.";
+      lorStatus.textContent = "LOR upload complete.";
+    } catch (e) {
+      lorStatus.textContent = sopStatus.textContent = "Error: " + e.message;
+    } finally {
+      btnAll.disabled = false; btnAll.classList.remove('opacity-50','cursor-not-allowed');
+      updateButtons();
+    }
+  }
+
+  async function multiUploadOther() {
+    const input = document.getElementById('other-files');
+    const docType = document.getElementById('other-type').value; // RESUME or OTHER
+    const statusEl = document.getElementById('other-status');
+    const btn = document.getElementById('btn-upload-other');
+
+    const files = Array.from(input.files || []);
+    if (!files.length) { statusEl.textContent = "Pick files first."; return; }
+
+    btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed');
+    statusEl.textContent = "Uploading…";
+    try {
+      for (const f of files) await uploadOne(f, docType, statusEl);
+      statusEl.textContent = "All done.";
+      input.value = "";
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    } finally {
+      btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed');
+    }
+  }
+
+  function updateButtons() {
+    const sopHas = (document.getElementById('sop-files').files?.length || 0) > 0;
+    const lorHas = (document.getElementById('lor-files').files?.length || 0) > 0;
+
+    document.getElementById('btn-upload-sop').disabled = !sopHas;
+    document.getElementById('btn-upload-lor').disabled = !lorHas;
+
+    if (sopHas && !lorHas) document.getElementById('btn-upload-lor').disabled = true;
+    if (lorHas && !sopHas) document.getElementById('btn-upload-sop').disabled = true;
+
+    const all = document.getElementById('btn-upload-all');
+    all.disabled = !(sopHas && lorHas);
+
+    ['btn-upload-sop','btn-upload-lor','btn-upload-all'].forEach(id => {
+      const b = document.getElementById(id);
+      b.classList.toggle('opacity-50', b.disabled);
+      b.classList.toggle('cursor-not-allowed', b.disabled);
+    });
+  }
+
+  document.getElementById('sop-files').addEventListener('change', updateButtons);
+  document.getElementById('lor-files').addEventListener('change', updateButtons);
+  updateButtons();
+  </script>
+{% endif %}
+
+{% endblock %}

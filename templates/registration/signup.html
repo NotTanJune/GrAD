@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-md mx-auto card px-8 py-10">
+  <h1 class="text-3xl font-bold tracking-tight mb-2">Create your account</h1>
+  <p class="text-sm text-slate-600 dark:text-slate-400 mb-5">Sign up to start tracking your applications.</p>
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="mb-4 text-sm text-red-700 dark:text-red-300 bg-red-50/80 dark:bg-red-900/30 border border-red-200/70 dark:border-red-900/50 px-3 py-2 rounded-lg">
+        {{ form.errors|striptags }}
+      </div>
+    {% endif %}
+
+    <div>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Username</label>
+      {{ form.username }}
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
+      {{ form.email }}
+    </div>
+    <div class="relative">
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
+      {{ form.password1 }}
+      <button type="button" aria-label="Toggle password visibility" class="absolute right-2 top-9 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200" onclick="togglePwd('id_password1', this)">
+        <span class="icon-off" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l18 18"/>
+            <path d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58"/>
+            <path d="M16.24 16.24A10.94 10.94 0 0 1 12 18c-5 0-9-4-10-6 1.05-2.01 3.11-4.15 5.76-5.47"/>
+            <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c5 0 9 4 10 6a11.66 11.66 0 0 1-2.19 2.88"/>
+          </svg>
+        </span>
+        <span class="icon-on hidden" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+    <div class="relative">
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Confirm Password</label>
+      {{ form.password2 }}
+      <button type="button" aria-label="Toggle password visibility" class="absolute right-2 top-9 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200" onclick="togglePwd('id_password2', this)">
+        <span class="icon-off" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3l18 18"/>
+            <path d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58"/>
+            <path d="M16.24 16.24A10.94 10.94 0 0 1 12 18c-5 0-9-4-10-6 1.05-2.01 3.11-4.15 5.76-5.47"/>
+            <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c5 0 9 4 10 6a11.66 11.66 0 0 1-2.19 2.88"/>
+          </svg>
+        </span>
+        <span class="icon-on hidden" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+
+    <button class="w-full btn-primary py-3 text-base font-semibold">Sign up</button>
+  </form>
+  <p class="text-xs text-slate-500 mt-4">Already have an account? <a href="/accounts/login/" class="underline">Log in</a>.</p>
+</div>
+
+<script>
+function togglePwd(inputId, btn){
+  var input = document.getElementById(inputId);
+  if (!input) return;
+  var isPw = input.getAttribute('type') === 'password';
+  input.setAttribute('type', isPw ? 'text' : 'password');
+  // toggle icons
+  var off = btn.querySelector('.icon-off');
+  var on = btn.querySelector('.icon-on');
+  if (isPw){
+    off.classList.add('hidden');
+    on.classList.remove('hidden');
+  } else {
+    on.classList.add('hidden');
+    off.classList.remove('hidden');
+  }
+}
+</script>
+{% endblock %}

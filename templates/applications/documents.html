@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Quick S3 uploader -->
+<section class="card p-5 md:p-6 mb-6">
+  <h2 class="text-lg font-semibold tracking-tight">Direct Upload to S3</h2>
+  <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Upload a single file straight to S3, then finalize in Django.</p>
+
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="md:col-span-2">
+      <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Title</label>
+      <input id="du-title" class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                                 text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+             placeholder="Title (e.g., Resume v2)" />
+    </div>
+    <div>
+      <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Type</label>
+      <select id="du-type" class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                                 text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+        <option value="SOP">SOP</option>
+        <option value="LOR">LOR</option>
+        <option value="RESUME">Resume/CV</option>
+        <option value="OTHER">Other</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Drag & drop zone -->
+  <div id="du-drop"
+       class="mt-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 p-5
+              bg-white/60 dark:bg-slate-900/40 hover:bg-white/80 dark:hover:bg-slate-900/60 transition
+              text-center cursor-pointer">
+    <input id="du-file" type="file" accept=".pdf,.doc,.docx,.txt"
+           class="hidden" />
+    <p class="text-sm text-slate-600 dark:text-slate-300">
+      Drag & drop your file here, or <span class="underline">browse</span>.<br>
+      <span class="text-xs text-slate-400">Accepted: PDF, DOC, DOCX, TXT</span>
+    </p>
+    <p id="du-picked" class="text-xs text-slate-500 mt-2"></p>
+  </div>
+
+  <!-- Actions + progress -->
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <button id="du-btn" class="btn-primary">Upload</button>
+    <span id="du-status" class="badge"></span>
+  </div>
+
+  <div id="du-progress-wrap" class="mt-3 hidden">
+    <div class="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+      <div id="du-progress" class="bg-indigo-500 h-2 rounded-full" style="width:0%"></div>
+    </div>
+    <div id="du-meta" class="text-xs text-slate-500 dark:text-slate-400 mt-1"></div>
+  </div>
+</section>
+
+<h1 class="text-2xl font-bold tracking-tight mb-3">Documents</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Form (if you’re still using the Django form) -->
+  <section class="card p-5 md:p-6">
+    <h2 class="text-lg font-semibold tracking-tight">Add / Edit</h2>
+    <form method="post" enctype="multipart/form-data" class="space-y-3 mt-2">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn-primary">Save</button>
+    </form>
+  </section>
+
+  <!-- List -->
+  <section class="card p-5 md:p-6">
+    <h2 class="text-lg font-semibold tracking-tight">Your Docs</h2>
+    <ul class="mt-3 space-y-2">
+      {% for d in docs %}
+        <li class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <span class="badge">{{ d.get_doc_type_display }}</span>
+            <span class="text-sm font-medium">{{ d.title }}</span>
+            <span class="ml-auto text-xs text-slate-500">Updated {{ d.updated_at|date:"Y-m-d H:i" }}</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            {% if d.file %}
+              <a class="underline text-indigo-600 dark:text-indigo-400" href="{{ d.file.url }}">download</a>
+            {% endif %}
+          </div>
+          {% if d.content %}
+            <pre class="text-xs whitespace-pre-wrap mt-1 text-slate-600 dark:text-slate-300">
+{{ d.content|truncatechars:240 }}</pre>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="text-sm text-slate-500">No documents yet.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<!-- JS -->
+<script>
+  // ---- elements
+  const drop   = document.getElementById('du-drop');
+  const fileEl = document.getElementById('du-file');
+  const picked = document.getElementById('du-picked');
+  const btn    = document.getElementById('du-btn');
+  const status = document.getElementById('du-status');
+  const barWrap= document.getElementById('du-progress-wrap');
+  const bar    = document.getElementById('du-progress');
+  const meta   = document.getElementById('du-meta');
+
+  // ---- drag & drop UX
+  drop.addEventListener('click', () => fileEl.click());
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('ring-2','ring-indigo-500'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('ring-2','ring-indigo-500'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('ring-2','ring-indigo-500');
+    if (e.dataTransfer.files?.length) {
+      fileEl.files = e.dataTransfer.files;
+      picked.textContent = "Selected: " + fileEl.files[0].name + " (" + prettySize(fileEl.files[0].size) + ")";
+    }
+  });
+  fileEl.addEventListener('change', () => {
+    const f = fileEl.files[0];
+    picked.textContent = f ? "Selected: " + f.name + " (" + prettySize(f.size) + ")" : "";
+  });
+
+  // ---- helpers
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+  function prettySize(bytes){
+    if (!bytes && bytes !== 0) return "";
+    const u = ["B","KB","MB","GB"]; let i = 0, n = bytes;
+    while (n >= 1024 && i < u.length-1){ n /= 1024; i++; }
+    return n.toFixed(n < 10 && i > 0 ? 1 : 0) + " " + u[i];
+  }
+  function setProgress(pct, speedText){
+    barWrap.classList.remove('hidden');
+    bar.style.width = `${pct}%`;
+    meta.textContent = speedText || "";
+  }
+
+  // ---- main upload flow
+  btn.addEventListener('click', directUpload);
+
+  async function directUpload() {
+    const file = fileEl.files[0];
+    const title = document.getElementById('du-title').value || (file?.name || 'Untitled');
+    const docType = document.getElementById('du-type').value;
+    if (!file) { status.textContent = "Choose a file first."; return; }
+
+    // Disable UI
+    btn.disabled = true;
+    status.textContent = "Requesting upload ticket…";
+    setProgress(0, "");
+
+    // 1) presign (NOTE: this matches your existing endpoint signature)
+    const presign = await fetch(`/api/presign/?filename=${encodeURIComponent(file.name)}`, { credentials: 'same-origin' });
+    if (!presign.ok) {
+      status.textContent = "Presign failed.";
+      btn.disabled = false;
+      return;
+    }
+    const data = await presign.json();
+
+    // 2) upload to S3 with progress via XHR
+    status.textContent = "Uploading to S3…";
+    const formData = new FormData();
+    Object.entries(data.post.fields).forEach(([k, v]) => formData.append(k, v));
+    formData.append("file", file);
+
+    const start = performance.now();
+    let lastLoaded = 0;
+
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", data.post.url, true);
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable) {
+          const pct = Math.round((evt.loaded / evt.total) * 100);
+          const dt = (performance.now() - start) / 1000;
+          const speed = (evt.loaded - lastLoaded) / (dt || 1); // bytes per sec since start (simple)
+          lastLoaded = evt.loaded;
+          setProgress(pct, `${pct}% • ${prettySize(speed)}/s`);
+        }
+      };
+      xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("S3 upload failed"));
+      xhr.onerror = () => reject(new Error("Network error during S3 upload"));
+      xhr.send(formData);
+    }).catch((e) => {
+      status.textContent = e.message;
+      btn.disabled = false;
+      return;
+    });
+
+    // 3) finalize in Django
+    status.textContent = "Finalizing…";
+    const finalize = await fetch("/api/finalize/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+      body: JSON.stringify({ title, doc_type: docType, key: data.key }),
+      credentials: "same-origin"
+    });
+
+    if (!finalize.ok) {
+      status.textContent = "Finalize failed.";
+      btn.disabled = false;
+      return;
+    }
+
+    const doc = await finalize.json();
+    status.textContent = `Done. Saved “${doc.title}”.`;
+    setProgress(100, "Complete");
+    // Refresh to show in list
+    setTimeout(() => window.location.reload(), 800);
+  }
+</script>
+
+{% endblock %}

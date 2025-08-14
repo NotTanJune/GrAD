@@ -1,0 +1,6 @@
+.env
+app_fixture.json
+auth_fixture.json
+db.sqllite3
+reset_db.py
+Makefile

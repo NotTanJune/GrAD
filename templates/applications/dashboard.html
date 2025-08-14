@@ -1,0 +1,292 @@
+{# templates/applications/dashboard.html #}
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-6 flex items-center justify-between gap-3">
+  <div>
+    <h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Track applications, reorder priorities, and update statuses.</p>
+  </div>
+  <a href="/applications/new/" class="btn-primary mt-2 md:mt-0 shadow-lg hover:shadow-xl">
+    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+    </svg>
+    New Application
+  </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <!-- Applications card -->
+  <section class="card md:col-span-2 p-6 md:p-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Your Applications</h2>
+      <span class="badge bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+        <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+        </svg>
+        Drag to reorder
+      </span>
+    </div>
+
+    <div class="overflow-visible rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+      <table class="w-full text-sm">
+        <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
+          <tr class="text-left">
+            <th class="w-12 px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider"></th> {# drag handle #}
+            <th class="px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider">College / Program</th>
+            <th class="px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider text-center w-20">Priority</th>
+            <th class="px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider w-32">Status</th>
+            <th class="px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider w-40">Updated</th>
+            <th class="px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider text-right w-24">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="apps-table" class="divide-y divide-slate-100 dark:divide-slate-800">
+          {% for app in apps %}
+            {% include "applications/partials/app_row.html" with app=app status_choices=status_choices %}
+          {% empty %}
+            <tr>
+              <td class="px-4 py-10 text-center text-slate-500 dark:text-slate-400" colspan="6">
+                You don’t have any applications yet.
+                <a class="underline" href="/applications/new/">Create a new application</a> to start tracking.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Notifications / side card -->
+  <section class="card p-6 md:p-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Latest Notifications</h2>
+      <span class="badge bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">coming soon</span>
+    </div>
+    <ul class="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+      <li class="flex items-start gap-3 opacity-80">
+        <svg class="h-4 w-4 mt-0.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Email scanning and alerts will appear here.
+      </li>
+      <li class="flex items-start gap-3 opacity-80">
+        <svg class="h-4 w-4 mt-0.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+        </svg>
+        Tip: keep your portal URLs set so we can deep-link.
+      </li>
+    </ul>
+  </section>
+</div>
+
+{# Drag + reorder logic #}
+  <script>
+    // CSRf helper
+    function getCookie(name){
+      const v = `; ${document.cookie}`;
+      const p = v.split(`; ${name}=`);
+      if (p.length === 2) return p.pop().split(';').shift();
+    }
+
+    // Status update function
+    async function updateStatus(newStatus) {
+      const row = event.target.closest('tr');
+      const appId = row.dataset.id;
+      const button = row.querySelector('.status-button');
+
+      // Normalize
+      const statusKey = String(newStatus || '').toUpperCase();
+
+      // Immediately update the button appearance
+      updateButtonColor(button, statusKey);
+
+      try{
+        const response = await fetch(`/applications/${appId}/status/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: `status=${encodeURIComponent(String(newStatus).toLowerCase())}`
+        });
+        if (response.ok) {
+          const newRowHtml = await response.text();
+          row.outerHTML = newRowHtml;
+        } else {
+          console.error('Status update failed');
+        }
+      }catch(err){
+        console.error('Error updating status:', err);
+      }
+    }
+
+    // Helper function to update button color
+    function updateButtonColor(button, statusUpper) {
+      if (!button) return;
+      // Remove prior color classes (simple but effective)
+      button.classList.remove(
+        'bg-emerald-100','text-emerald-800','dark:bg-emerald-900/40','dark:text-emerald-200','hover:bg-emerald-200','dark:hover:bg-emerald-900/60','focus:ring-emerald-500',
+        'bg-red-100','text-red-800','dark:bg-red-900/40','dark:text-red-200','hover:bg-red-200','dark:hover:bg-red-900/60','focus:ring-red-500',
+        'bg-orange-100','text-orange-800','dark:bg-orange-900/40','dark:text-orange-200','hover:bg-orange-200','dark:hover:bg-orange-900/60','focus:ring-orange-500',
+        'bg-blue-100','text-blue-800','dark:bg-blue-900/40','dark:text-blue-200','hover:bg-blue-200','dark:hover:bg-blue-900/60','focus:ring-blue-500',
+        'bg-yellow-100','text-yellow-800','dark:bg-yellow-900/40','dark:text-yellow-200','hover:bg-yellow-200','dark:hover:bg-yellow-900/60','focus:ring-yellow-500',
+        'bg-purple-100','text-purple-800','dark:bg-purple-900/40','dark:text-purple-200','hover:bg-purple-200','dark:hover:bg-purple-900/60','focus:ring-purple-500',
+        'bg-slate-100','text-slate-700','dark:bg-slate-800/60','dark:text-slate-200','hover:bg-slate-200','dark:hover:bg-slate-700/60','focus:ring-slate-500'
+      );
+
+      const colors = {
+        ACCEPTED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:ring-emerald-500',
+        ADMIT: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:ring-emerald-500',
+        OFFER: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:ring-emerald-500',
+        REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/60 focus:ring-red-500',
+        DENIED: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/60 focus:ring-red-500',
+        SUBMITTED: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 hover:bg-orange-200 dark:hover:bg-orange-900/60 focus:ring-orange-500',
+        INTERVIEW: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/60 focus:ring-blue-500',
+        REVIEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 focus:ring-yellow-500',
+        UNDER_REVIEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 focus:ring-yellow-500',
+        WAITLISTED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-900/60 focus:ring-purple-500',
+        WAITLIST: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-900/60 focus:ring-purple-500',
+        DRAFT: 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700/60 focus:ring-slate-500'
+      };
+
+      const cls = colors[statusUpper] || 'bg-slate-100 text-slate-700 dark:bg-slate-800/40 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/60 focus:ring-slate-500';
+      button.className = `status-button inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ${cls}`;
+
+      const span = button.querySelector('span');
+      if (span) span.textContent = statusUpper.charAt(0) + statusUpper.slice(1).toLowerCase().replace('_',' ');
+    }
+
+    // Listen for HX trigger from server after deletion and renumber priorities in DOM
+    document.body.addEventListener('htmx:afterOnLoad', function(evt){
+      const trig = evt.detail.xhr.getResponseHeader('HX-Trigger');
+      if (trig && trig.indexOf('renumber-priorities') !== -1) {
+        const rows = document.querySelectorAll('#apps-table tr[data-id]');
+        rows.forEach((row, i) => {
+          const cell = row.querySelector('[data-cell="priority"]') || row.children[2];
+          if (cell) cell.textContent = String(i + 1);
+        });
+      }
+    });
+
+  $(function(){
+    const $tbody = $('#apps-table');
+    if (!$tbody.length) return;
+
+    $tbody.sortable({
+      items: '> tr[data-id]',
+      handle: '.drag-handle',
+      axis: 'y',
+      tolerance: 'pointer',
+      revert: 200,
+      appendTo: 'body',
+      containment: 'parent',
+      scroll: true,
+      distance: 5,
+
+      // Create a proper drag helper that maintains table structure
+      helper: function(event, tr){
+        const $tr = $(tr);
+        const $table = $tr.closest('table');
+        const $clone = $tr.clone();
+        
+        // Get the original table structure
+        const $headerRow = $table.find('thead tr');
+        const $cloneCells = $clone.children();
+        const $headerCells = $headerRow.children();
+        
+        // Match column widths exactly
+        $cloneCells.each(function(i){
+          if ($headerCells.eq(i).length) {
+            $(this).width($headerCells.eq(i).outerWidth());
+          }
+        });
+
+        // Style the clone
+        const isDark = document.documentElement.classList.contains('dark');
+        $clone.css({
+          'background': isDark ? '#1e293b' : '#fff',
+          'border-radius': '8px',
+          'box-shadow': isDark ? '0 8px 25px rgba(0,0,0,.25)' : '0 8px 25px rgba(0,0,0,.15)',
+          'opacity': '0.95',
+          'border': isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+          'display': 'table',
+          'table-layout': 'fixed',
+          'width': $table.outerWidth()
+        });
+
+        // Style all cells in the clone
+        $clone.find('td').css({
+          'background': 'transparent',
+          'border': 'none',
+          'padding': '12px 8px'
+        });
+
+        return $clone;
+      },
+
+      start: function(event, ui){
+        // full-row placeholder
+        ui.placeholder.html('<td colspan="6"></td>');
+
+        // Get table position for alignment
+        const tableEl = $tbody.closest('table').get(0);
+        const tableRect = tableEl.getBoundingClientRect();
+        
+        // Set cursor offset for natural feel
+        $(this).sortable('option', 'cursorAt', { left: 20, top: 10 });
+        
+        // Force the helper to stay aligned with the table
+        const updatePosition = function() {
+          const currentRect = tableEl.getBoundingClientRect();
+          ui.helper.css({
+            'left': currentRect.left + 'px',
+            'position': 'fixed'
+          });
+        };
+        
+        // Update position immediately and on scroll
+        updatePosition();
+        $(window).on('scroll resize', updatePosition);
+        
+        // Clean up on stop
+        ui.helper.data('updatePosition', updatePosition);
+      },
+
+      stop: function(event, ui) {
+        // Clean up event listeners
+        const updatePosition = ui.helper.data('updatePosition');
+        if (updatePosition) {
+          $(window).off('scroll resize', updatePosition);
+        }
+      },
+
+      update: async function(){
+        // New order
+        const order = $tbody.find('tr[data-id]').map(function(){
+          return parseInt(this.dataset.id, 10);
+        }).get();
+
+        // Renumber priorities in the DOM (post-drop only)
+        $tbody.find('tr[data-id]').each(function(i, el){
+          const cell = el.querySelector('[data-cell="priority"]') || el.children[2];
+          if (cell) cell.textContent = String(i + 1);
+        });
+
+        // Persist
+        try{
+          const res = await fetch("{% url 'applications:applications_reorder' %}", {
+            method: "POST",
+            headers: { "Content-Type":"application/json", "X-CSRFToken": getCookie("csrftoken") },
+            body: JSON.stringify({ order })
+          });
+          if (!res.ok) console.error("Reorder failed:", res.status);
+        }catch(err){
+          console.error("Reorder error:", err);
+        }
+      }
+    });
+
+    $tbody.disableSelection();
+  });
+</script>
+{% endblock %}

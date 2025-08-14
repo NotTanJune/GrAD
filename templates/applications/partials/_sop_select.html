@@ -1,0 +1,16 @@
+<label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">SOP file</label>
+<select id="attachment_id" name="attachment_id"
+        class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+               text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+  {% if sops %}
+    <option value="">— Select SOP —</option>
+    {% for a in sops %}
+      <option value="{{ a.id }}">{{ a.title }}</option>
+    {% endfor %}
+  {% else %}
+    <option value="">(No SOPs found for this application)</option>
+  {% endif %}
+</select>
+<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+  Pulled from your S3 uploads for the selected application.
+</p>

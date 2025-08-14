@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="text-2xl md:text-3xl font-bold tracking-tight">
+    Attachments — {{ app.college_name }} / {{ app.program_name }}
+  </h1>
+  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+    Upload multiple SOPs and LORs. Files go straight to S3, then appear below.
+  </p>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+  <!-- SOP uploader -->
+  <section class="card p-5 md:p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold tracking-tight">Upload SOP (multiple)</h2>
+      <span class="badge">PDF, DOC, DOCX, TXT</span>
+    </div>
+    <input id="sop-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
+           class="mt-3 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                  text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+    <button class="btn-primary mt-3 inline-flex items-center gap-2"
+            onclick="multiUpload('SOP')">
+      <span class="hidden h-3 w-3 rounded-full border-2 border-white/60 border-t-transparent animate-spin"></span>
+      Upload SOPs
+    </button>
+    <div id="sop-status" class="text-sm text-slate-600 dark:text-slate-300 mt-2"></div>
+  </section>
+
+  <!-- LOR uploader -->
+  <section class="card p-5 md:p-6">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold tracking-tight">Upload LOR (multiple)</h2>
+      <span class="badge">PDF, DOC, DOCX, TXT</span>
+    </div>
+    <input id="lor-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
+           class="mt-3 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                  text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+    <button class="btn-primary mt-3 inline-flex items-center gap-2"
+            onclick="multiUpload('LOR')">
+      <span class="hidden h-3 w-3 rounded-full border-2 border-white/60 border-t-transparent animate-spin"></span>
+      Upload LORs
+    </button>
+    <div id="lor-status" class="text-sm text-slate-600 dark:text-slate-300 mt-2"></div>
+  </section>
+</div>
+
+<section class="card p-5 md:p-6 mt-6">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-lg font-semibold tracking-tight">Existing Attachments</h2>
+    <a href="{% url 'applications:dashboard' %}" class="btn-ghost">Back to dashboard</a>
+  </div>
+  <ul id="attachments-list" class="mt-3 space-y-2">
+    {% for a in app.attachments.all %}
+      <li class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm flex items-center gap-2">
+        <span class="badge">{{ a.doc_type }}</span>
+        <span class="font-medium">{{ a.title }}</span>
+        <a class="underline text-indigo-600 dark:text-indigo-400 ml-auto"
+           href="{% url 'applications:attachment_download' a.id %}">view</a>
+      </li>
+    {% empty %}
+      <li id="attachments-empty" class="text-sm text-slate-500 dark:text-slate-400">No files yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<script>
+  // keep your existing helpers
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  function appendAttachment(docType, title, _unused, id) {
+    const list = document.getElementById('attachments-list');
+    const empty = document.getElementById('attachments-empty');
+    if (empty) empty.remove();
+
+    const li = document.createElement('li');
+    li.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm flex items-center gap-2';
+    li.innerHTML = `<span class="badge">${docType}</span>
+      <span class="font-medium">${title}</span>
+      <a class="underline text-indigo-600 dark:text-indigo-400 ml-auto"
+         href="/applications/attachments/${id}/download/">view</a>`;
+    list.prepend(li);
+  }
+
+  async function uploadOne(file, docType, statusEl) {
+    const ct = file.type || "application/octet-stream";
+    const presign = await fetch(
+      `/api/presign/?application_id={{ app.id }}&doc_type=${docType}&filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(ct)}`
+    );
+    if (!presign.ok) throw new Error("presign failed");
+    const data = await presign.json();
+
+    const form = new FormData();
+    Object.entries(data.post.fields).forEach(([k,v]) => form.append(k,v));
+    form.append("file", file);
+
+    const s3Resp = await fetch(data.post.url, { method: "POST", body: form });
+    if (!s3Resp.ok) throw new Error("upload to s3 failed");
+
+    const finalize = await fetch("/api/finalize/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+      body: JSON.stringify({
+        application_id: "{{ app.id }}",
+        doc_type: docType,
+        key: data.key,
+        title: file.name
+      }),
+      credentials: "same-origin"
+    });
+    if (!finalize.ok) throw new Error("finalize failed");
+    const res = await finalize.json();
+
+    appendAttachment(docType, res.title, null, res.id);
+    statusEl.textContent = `Saved: ${res.title}`;
+  }
+
+  async function multiUpload(docType) {
+    const inputId  = (docType === "SOP") ? "sop-files" : "lor-files";
+    const statusId = (docType === "SOP") ? "sop-status" : "lor-status";
+    const input = document.getElementById(inputId);
+    const statusEl = document.getElementById(statusId);
+    const btn = event?.target; // if called via onclick on the button
+    const spinner = btn?.querySelector('span');
+
+    const files = Array.from(input.files || []);
+    if (!files.length) { statusEl.textContent = "Pick files first."; return; }
+
+    if (btn) { btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed'); spinner?.classList.remove('hidden'); }
+    statusEl.textContent = "Uploading…";
+
+    try {
+      for (const f of files) {
+        await uploadOne(f, docType, statusEl);
+      }
+      statusEl.textContent = "All done.";
+      input.value = "";
+    } catch (e) {
+      statusEl.textContent = "Error: " + e.message;
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed'); spinner?.classList.add('hidden'); }
+    }
+  }
+
+  document.getElementById('sop-files').addEventListener('change', () => {
+    document.getElementById('sop-status').textContent = '';
+  });
+  document.getElementById('lor-files').addEventListener('change', () => {
+    document.getElementById('lor-status').textContent = '';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+
+Django>=5.0,<6.0
+django-htmx>=1.17.3
+python-dotenv>=1.0.1
+openai>=1.40.0
+imapclient>=3.0  # optional alternative to imaplib; we use stdlib but keep handy
+beautifulsoup4>=4.12.3
+psycopg2-binary==2.9.10
+dj-database-url==2.3.0
+gunicorn==21.2.0
+whitenoise==6.6.0
+dj-database-url>=2.1
+psycopg[binary]>=3.1
+python-dotenv>=1.0

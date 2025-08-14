@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page intro -->
+<div class="mb-4">
+  <h1 class="text-2xl md:text-3xl font-bold tracking-tight">SOP Assistant</h1>
+  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Pick an application & SOP, then stream a structured review.</p>
+</div>
+
+<!-- Controls -->
+<section class="card p-5 md:p-6 space-y-4">
+  <div class="grid md:grid-cols-3 gap-4">
+    <!-- App picker -->
+    <div>
+      <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">College / Program</label>
+      <select name="application_id"
+              id="application_id"
+              class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                     text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+              hx-get="{% url 'applications:sop_sops_for_app' %}"
+              hx-trigger="load, change"
+              hx-target="#sop_select_wrap"
+              hx-swap="innerHTML">
+        <option value="">— Select application —</option>
+        {% for app in apps %}
+          <option value="{{ app.id }}">{{ app.college_name }} — {{ app.program_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- SOP picker (HTMX target) -->
+    <div id="sop_select_wrap">
+      <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">SOP file</label>
+      <select id="attachment_id" class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                                       text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+        <option value="">— Select SOP —</option>
+      </select>
+      <p class="text-[11px] text-slate-500 mt-1">Pulled from your S3 uploads for the selected application.</p>
+    </div>
+
+    <!-- Notes -->
+    <div>
+      <label class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">(Optional) Notes</label>
+      <input id="notes" class="mt-1 w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                              text-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+             placeholder="word limit, faculty to mention, tone, etc.">
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <button type="button" id="btn-stream"
+            class="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled>
+      <span id="spinner" class="hidden mr-1 inline-block h-3 w-3 rounded-full border-2 border-white/60 border-t-transparent animate-spin"></span>
+      Analyze
+    </button>
+
+    <!-- Optional: quick link to download original SOP when selected -->
+    <a id="dl-link" class="text-sm underline hidden" target="_blank" rel="noopener">download chosen SOP</a>
+
+    <span id="stream-status" class="badge"></span>
+  </div>
+</section>
+
+<!-- Streamed output -->
+<section id="stream-result" class="card p-5 md:p-6 mt-6 hidden">
+  <div class="flex items-center gap-3 mb-3">
+    <h2 class="font-semibold text-lg tracking-tight">Live analysis</h2>
+    <button type="button" id="btn-download-md" class="btn-ghost text-sm" disabled>
+      Download report.md
+    </button>
+  </div>
+
+  <!-- Pretty markdown via Tailwind Typography -->
+  <article
+    id="stream-md"
+    class="prose prose-slate prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg
+           dark:prose-invert max-w-none">
+  </article>
+</section>
+
+<!-- Marked.js for client-side markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+  // ---------- helpers ----------
+  function val(id){ return (document.getElementById(id)?.value || '').trim(); }
+  function esc(s){ return encodeURIComponent(s || ''); }
+
+  const appSel = document.getElementById('application_id');
+  const btn    = document.getElementById('btn-stream');
+  const status = document.getElementById('stream-status');
+  const box    = document.getElementById('stream-result');
+  const out    = document.getElementById('stream-md');
+  const dlBtn  = document.getElementById('btn-download-md');
+  const dlLink = document.getElementById('dl-link');
+  const spin   = document.getElementById('spinner');
+
+  function updateButtonState(){
+    const sopSel = document.getElementById('attachment_id');
+    const ok = !!val('application_id') && !!(sopSel && sopSel.value && sopSel.value.trim());
+    btn.disabled = !ok;
+    dlLink.classList.toggle('hidden', !ok);
+    if (ok) dlLink.href = `/applications/attachments/${sopSel.value}/download/`;
+  }
+
+  appSel.addEventListener('change', updateButtonState);
+  document.addEventListener('htmx:afterSwap', (e) => {
+    if (e.target.id === 'sop_select_wrap') {
+      const s = document.getElementById('attachment_id');
+      if (s) s.addEventListener('change', updateButtonState);
+      updateButtonState();
+    }
+  });
+  updateButtonState();
+
+  // ---------- streaming markdown -> HTML ----------
+  let mdBuffer = "";
+
+  btn?.addEventListener('click', async () => {
+    const appId = val('application_id');
+    const sopSel = document.getElementById('attachment_id');
+    const attId  = (sopSel?.value || '').trim();
+    const notes  = esc(val('notes'));
+    if (!appId || !attId) { alert('Pick an application and SOP first.'); return; }
+
+    const url = `/applications/sop-assistant/stream/?application_id=${appId}&attachment_id=${attId}&notes=${notes}`;
+    mdBuffer = "";
+    out.innerHTML = "";
+    box.classList.remove('hidden');
+
+    status.textContent = "Generating…";
+    btn.disabled = true;
+    dlBtn.disabled = true;
+    spin.classList.remove('hidden');
+
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok || !resp.body) throw new Error("stream failed");
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+
+      let lastRender = 0;
+      const RENDER_INTERVAL_MS = 120;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        mdBuffer += dec.decode(value, { stream: true });
+
+        const now = performance.now();
+        if (now - lastRender > RENDER_INTERVAL_MS) {
+          out.innerHTML = marked.parse(mdBuffer);
+          lastRender = now;
+          box.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      out.innerHTML = marked.parse(mdBuffer);   // final render
+      status.textContent = "Done.";
+      dlBtn.disabled = false;
+    } catch (e) {
+      status.textContent = "Error: " + e.message;
+    } finally {
+      btn.disabled = false;
+      spin.classList.add('hidden');
+    }
+  });
+
+  // ---------- download .md ----------
+  dlBtn?.addEventListener('click', () => {
+    if (!mdBuffer) return;
+    const blob = new Blob([mdBuffer], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const appOpt = document.querySelector('#application_id option:checked')?.textContent?.replace(/\s+/g,'_') || 'Application';
+    const sopOpt = document.querySelector('#attachment_id option:checked')?.textContent?.replace(/\s+/g,'_') || 'SOP';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SOP_Analysis__${appOpt}__${sopOpt}.md`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  });
+</script>
+
+{% endblock %}

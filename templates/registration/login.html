@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Intro blurb above auth card -->
+<div class="max-w-2xl mx-auto text-center mb-8">
+  <p class="text-sm md:text-base text-slate-600 dark:text-slate-300">
+    Track, prioritize, and manage your graduate applications in one clean dashboard.
+    Upload SOPs and LORs, update statuses, and get a clear picture of progress.
+  </p>
+</div>
+
+<div class="max-w-md mx-auto card px-8 py-10">
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 mb-4">
+      <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+      </svg>
+    </div>
+    <h1 class="text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+      {% if user.is_authenticated %}Welcome back{% else %}Welcome{% endif %}
+    </h1>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Sign in to continue to your applications.</p>
+  </div>
+
+  {% if form.errors or form.non_field_errors %}
+    <div class="mb-6 text-sm text-red-700 dark:text-red-300 bg-red-50/80 dark:bg-red-900/30 
+                border border-red-200/70 dark:border-red-900/50 px-4 py-3 rounded-xl flex items-center gap-3">
+      <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <div>
+        {% if form.non_field_errors %}
+          {{ form.non_field_errors }}
+        {% else %}
+          Please check your username and password.
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Username -->
+    <div>
+      <label for="{{ form.username.id_for_label }}" class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">
+        Username
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          name="{{ form.username.name }}"
+          id="{{ form.username.id_for_label }}"
+          value="{{ form.username.value|default_if_none:'' }}"
+          autocomplete="username"
+          autofocus
+          class="w-full pl-10 pr-4 py-3 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all duration-200"
+          placeholder="Enter your username"
+        />
+      </div>
+      {% if form.username.errors %}
+        <p class="mt-2 text-xs text-red-600 flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          {{ form.username.errors|striptags }}
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- Password with show/hide -->
+    <div>
+      <label for="{{ form.password.id_for_label }}" class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">
+        Password
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <input
+          type="password"
+          name="{{ form.password.name }}"
+          id="{{ form.password.id_for_label }}"
+          autocomplete="current-password"
+          class="w-full pl-10 pr-12 py-3 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all duration-200"
+          placeholder="Enter your password"
+        />
+        <button type="button"
+                class="absolute inset-y-0 right-0 px-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                onclick="togglePassword(this)">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg>
+        </button>
+      </div>
+      {% if form.password.errors %}
+        <p class="mt-2 text-xs text-red-600 flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          {{ form.password.errors|striptags }}
+        </p>
+      {% endif %}
+    </div>
+
+    <button class="w-full btn-primary py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
+      <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+      </svg>
+      Sign In
+    </button>
+  </form>
+
+  <p class="text-xs text-slate-500 mt-4 text-center">
+    Don’t have an account? <a href="/accounts/signup/" class="underline">Create one</a>.
+  </p>
+
+  {% if next %}
+    <p class="text-[11px] text-slate-500 mt-3 text-center">You’ll be redirected after login.</p>
+  {% endif %}
+</div>
+
+<script>
+function togglePassword(btn) {
+  const input = btn.previousElementSibling;
+  const isPassword = input.getAttribute('type') === 'password';
+  input.setAttribute('type', isPassword ? 'text' : 'password');
+  
+  if (isPassword) {
+    btn.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path></svg>';
+  } else {
+    btn.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>';
+  }
+}
+</script>
+
+{% endblock %}
