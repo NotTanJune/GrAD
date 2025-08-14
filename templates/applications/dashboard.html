@@ -20,16 +20,19 @@
   <section class="card md:col-span-2 p-6 md:p-8">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Your Applications</h2>
-      <span class="badge bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-        <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-        </svg>
-        Drag to reorder
-      </span>
+      <div class="flex items-center gap-2">
+        <span class="badge bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+          </svg>
+          Drag to reorder
+        </span>
+        <span class="badge md:hidden bg-white/20 text-white border border-white/30">Swipe to scroll</span>
+      </div>
     </div>
 
-    <div class="overflow-visible rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-      <table class="w-full text-sm">
+    <div class="relative overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm scroll-hint">
+      <table class="w-full min-w-[720px] text-sm">
         <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
           <tr class="text-left">
             <th class="w-12 px-4 py-4 font-semibold text-slate-700 dark:text-slate-200 text-xs uppercase tracking-wider"></th> {# drag handle #}
