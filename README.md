@@ -9,6 +9,6 @@
 - SOP Assistant (Groq Inferencing) to analyze SOPs.
 - Priority field on programs for quick sorting.
 
-## https://grad-kd7v.onrender.com
+### Check out the website - https://grad-kd7v.onrender.com
 
-## For any feature suggestions/bug reporting, please email me at TANMAYSA001@e.ntu.edu.sg
+#### For any feature suggestions/bug reporting, please email me at TANMAYSA001@e.ntu.edu.sg
