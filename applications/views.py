@@ -43,16 +43,26 @@ def application_attachments(request, pk: int):
 @login_required
 @require_POST
 def delete_application(request, pk):
+    is_htmx = (
+        request.headers.get("HX-Request", "").lower() == "true"
+        or bool(request.META.get("HTTP_HX_REQUEST"))
+    )
     # Be defensive to avoid surfacing a 404 page to htmx requests.
     # If not found, return an empty response so the row can be swapped out gracefully.
     app = Application.objects.filter(pk=pk).first()
     if app is None:
-        resp = HttpResponse("")
-        resp["HX-Trigger"] = "renumber-priorities"
-        return resp
+        if is_htmx:
+            resp = HttpResponse("")
+            resp["HX-Trigger"] = "renumber-priorities"
+            return resp
+        messages.info(request, "Application already deleted.")
+        return redirect("applications:dashboard")
 
     if app.user_id != request.user.id:
-        return HttpResponseForbidden("Not allowed")
+        if is_htmx:
+            return HttpResponseForbidden("Not allowed")
+        messages.error(request, "You are not allowed to delete that application.")
+        return redirect("applications:dashboard")
 
     # Delete any S3 files for attachments
     aws_region = os.getenv("AWS_S3_REGION_NAME", "ap-southeast-1")
@@ -91,9 +101,12 @@ def delete_application(request, pk):
         except Exception:
             pass
 
-    resp = HttpResponse("")
-    resp["HX-Trigger"] = "renumber-priorities"
-    return resp
+    if is_htmx:
+        resp = HttpResponse("")
+        resp["HX-Trigger"] = "renumber-priorities"
+        return resp
+    messages.success(request, "Application deleted.")
+    return redirect("applications:dashboard")
 
 
 @login_required
