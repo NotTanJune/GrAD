@@ -25,10 +25,19 @@ render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_host:
     ALLOWED_HOSTS.append(render_host)
 
+# Add Fly.io hostname
+fly_host = os.getenv("FLY_APP_NAME")
+if fly_host:
+    ALLOWED_HOSTS.append(f"{fly_host}.fly.dev")
+
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
 ]
+
+# Add Fly.io CSRF trusted origins
+if fly_host:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{fly_host}.fly.dev")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
