@@ -1,43 +1,34 @@
 # Use Python 3.11 slim image
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PORT=8000
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# System deps
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        libpq-dev \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
+ && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Python deps
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Project
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
+# Non-root
+RUN adduser --disabled-password --gecos '' appuser \
+ && chown -R appuser:appuser /app
 USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Health check
+# Optional container healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
+  CMD curl -f http://localhost:8000/ || exit 1
 
-# Run the application
+# Run server
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "appmgr.wsgi:application"]
