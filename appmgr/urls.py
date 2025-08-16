@@ -2,11 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 from applications import views as app_views
-from django.http import HttpResponse
-
-
-def healthz(_):
-    return HttpResponse("ok", content_type="text/plain")
+from appmgr.health import healthz
 
 
 urlpatterns = [
@@ -18,5 +14,5 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/signup/", app_views.signup, name="signup"),
     path("api/", include("applications.api_urls")),
-    path("healthz/", healthz),
+    path("healthz", healthz),
 ]

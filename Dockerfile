@@ -31,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/ || exit 1
 
 # Run server
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "appmgr.wsgi:application"]
+CMD ["sh","-lc","gunicorn --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --timeout 180 --keep-alive 75 --access-logfile - --error-logfile - appmgr.wsgi:application"]

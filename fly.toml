@@ -19,7 +19,7 @@ primary_region = 'sin'
 [http_service]
   internal_port = 8000
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 0
 
@@ -31,7 +31,7 @@ primary_region = 'sin'
   [[http_service.checks]]
     interval = '15s'
     timeout = '5s'
-    grace_period = '60s'
+    grace_period = '120s'
     method = 'GET'
     path = '/healthz'
 
