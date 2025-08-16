@@ -35,7 +35,6 @@
     }
   </script>
 
-  <!-- App component layer -->
   <style type="text/tailwindcss">
     @layer components {
       .card { @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 rounded-2xl shadow-soft border border-slate-200/50 dark:border-slate-700/50; }
@@ -48,101 +47,54 @@
   </style>
 
   <style>
-    .ui-sortable-helper {
-      position: fixed !important;
-      pointer-events: none;
-      transform: translateZ(0);
-      z-index: 9999;
-      margin: 0 !important;
-    }
+    /* Don’t let table cells clip menus */
+    table, thead, tbody, tr, td, th { overflow: visible !important; }
 
-    .drag-wrapper {
-      background: transparent;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+    .ui-sortable-helper { position: fixed !important; pointer-events: none; transform: translateZ(0); z-index: 9999; margin: 0 !important; }
+    .drag-wrapper { background: transparent; border-radius: 8px; overflow: hidden; }
 
-    .ui-sortable-placeholder { 
-      visibility: visible !important; 
-      background: transparent !important; 
-    }
-    .ui-sortable-placeholder > td {
-      padding: 8px 0 !important;
-      border-top: 2px dashed rgba(100,116,139,.35);
-      border-bottom: 0 !important;
-      height: 0 !important; 
-      line-height: 0 !important;
-    }
+    .ui-sortable-placeholder { visibility: visible !important; background: transparent !important; }
+    .ui-sortable-placeholder > td { padding: 8px 0 !important; border-top: 2px dashed rgba(100,116,139,.35); border-bottom: 0 !important; height: 0 !important; line-height: 0 !important; }
 
-    #apps-table tr { 
-      transition: transform .2s cubic-bezier(.2,.8,.2,1), background-color .12s; 
-    }
-    #apps-table, #apps-table * { 
-      user-select: none; 
-    }
+    #apps-table tr { transition: transform .2s cubic-bezier(.2,.8,.2,1), background-color .12s; }
+    #apps-table, #apps-table * { user-select: none; }
 
-    .drag-handle { 
-      cursor: grab; 
-    }
-    .drag-handle:active { 
-      cursor: grabbing; 
-    }
+    .drag-handle { cursor: grab; }
+    .drag-handle:active { cursor: grabbing; }
 
-    .ui-sortable-helper .drag-handle {
-      opacity: 0.4;
-    }
+    .ui-sortable-helper .drag-handle { opacity: 0.4; }
 
     /* Mobile table scroll hint gradient */
-    .scroll-hint:after {
-      content: "";
-      position: absolute;
-      right: 0; top: 0; bottom: 0;
-      width: 36px;
-      pointer-events: none;
-      background: linear-gradient(to left, rgba(0,0,0,0.06), rgba(0,0,0,0));
-    }
+    .scroll-hint:after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 36px; pointer-events: none; background: linear-gradient(to left, rgba(0,0,0,0.06), rgba(0,0,0,0)); }
     html.dark .scroll-hint:after { background: linear-gradient(to left, rgba(255,255,255,0.06), rgba(0,0,0,0)); }
   </style>
 </head>
 
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-  <!-- Top gradient nav -->
   <header class="sticky top-0 z-30">
     <div class="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 shadow-lg">
       <nav class="container" x-data="{ mobileOpen: false }">
         <div class="py-4 flex items-center gap-6 flex-wrap md:flex-nowrap text-white">
-          <!-- Brand: far left -->
           <a href="/" class="flex items-center gap-2 font-bold text-2xl tracking-tight hover:scale-105 transition-transform">
-            <span class="sr-only">Grab a Degree</span>
-            <span class="font-black leading-none">GrAD</span>
+            <span class="sr-only">Grab a Degree</span><span class="font-black leading-none">GrAD</span>
           </a>
 
           <div class="flex-1 min-w-0">
             {% if user.is_authenticated %}
             <ul class="hidden md:flex items-center gap-8 pl-6">
-              <li>
-                <a href="/applications/new/" class="nav-link text-white/90 hover:text-white font-medium">New Application</a>
-              </li>
-              <li>
-                <a href="/applications/sop-assistant/" class="nav-link text-white/90 hover:text-white font-medium">SOP Assistant</a>
-              </li>
+              <li><a href="/applications/new/" class="nav-link text-white/90 hover:text-white font-medium">New Application</a></li>
+              <li><a href="/applications/sop-assistant/" class="nav-link text-white/90 hover:text-white font-medium">SOP Assistant</a></li>
             </ul>
             {% endif %}
           </div>
 
-          <!-- Right controls -->
           <div class="ml-auto flex items-center gap-3 shrink-0">
             <button id="themeToggle" class="btn-ghost bg-white/10 text-white hover:bg-white/20 transition-all duration-200" title="Toggle dark mode">
               <svg id="sun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:inline" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                <circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
               </svg>
               <svg id="moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 1 0 9.79 9.79Z"/></svg>
             </button>
@@ -156,27 +108,18 @@
               <a href="/accounts/login/" class="hidden md:inline btn-ghost bg-white/10 text-white hover:bg-white/20 font-medium transition-all duration-200">Log in</a>
             {% endif %}
 
-            <!-- Mobile menu toggle -->
-            <button @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen"
-                    class="md:hidden btn-ghost bg-white/10 text-white hover:bg-white/20"
-                    title="Menu">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+            <button @click="mobileOpen = !mobileOpen" :aria-expanded="mobileOpen" class="md:hidden btn-ghost bg-white/10 text-white hover:bg-white/20" title="Menu">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
             </button>
           </div>
         </div>
 
-        <!-- Mobile dropdown panel -->
         <div class="md:hidden text-white/90" x-show="mobileOpen" x-transition.opacity x-transition.duration.150ms>
           <div class="pb-4 space-y-2">
             {% if user.is_authenticated %}
               <a href="/applications/new/" class="block btn-ghost bg-white/10 hover:bg-white/20">New Application</a>
               <a href="/applications/sop-assistant/" class="block btn-ghost bg-white/10 hover:bg-white/20">SOP Assistant</a>
-              <form action="/accounts/logout/" method="post">
-                {% csrf_token %}
-                <button class="w-full text-left btn-ghost bg-white/10 hover:bg-white/20">Logout</button>
-              </form>
+              <form action="/accounts/logout/" method="post">{% csrf_token %}<button class="w-full text-left btn-ghost bg-white/10 hover:bg-white/20">Logout</button></form>
             {% else %}
               <a href="/accounts/login/" class="block btn-ghost bg-white/10 hover:bg-white/20">Log in</a>
             {% endif %}
@@ -190,10 +133,7 @@
     {% if messages %}
       <div class="space-y-2 mb-4">
         {% for m in messages %}
-          <div class="card px-4 py-3 text-sm border border-emerald-200/60 dark:border-emerald-900/40
-                      bg-emerald-50/70 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200">
-            {{ m }}
-          </div>
+          <div class="card px-4 py-3 text-sm border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/70 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200">{{ m }}</div>
         {% endfor %}
       </div>
     {% endif %}
@@ -228,18 +168,12 @@
       const okBtn = document.getElementById('btnConfirmDel');
       const cancelBtn = document.getElementById('btnCancelDel');
       if (!modal || !okBtn || !cancelBtn) return false;
-
-      const cleanup = () => {
-        modal.classList.add('hidden');
-        okBtn.removeEventListener('click', onOk);
-        cancelBtn.removeEventListener('click', onCancel);
-      };
+      const cleanup = () => { modal.classList.add('hidden'); okBtn.removeEventListener('click', onOk); cancelBtn.removeEventListener('click', onCancel); };
       const onOk = () => { cleanup(); formEl.submit(); };
       const onCancel = () => { cleanup(); };
       okBtn.addEventListener('click', onOk);
       cancelBtn.addEventListener('click', onCancel);
       modal.classList.remove('hidden');
-
       return false;
     }
     window.confirmDeleteApplication = confirmDeleteApplication;

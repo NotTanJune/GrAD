@@ -9,19 +9,17 @@ load_dotenv(BASE_DIR / ".env")
 
 log = logging.getLogger(__name__)
 
-# --- Core ---
 DEBUG = os.getenv("DEBUG", "0").lower() in ("1", "true", "yes")
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-not-secret")
 
-# Allow common local + Fly hosts by default; you can tighten later with ALLOWED_HOSTS env
-_default_hosts = "localhost,127.0.0.1,[::1],.fly.dev,.internal"
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.getenv("ALLOWED_HOSTS", _default_hosts).split(",")
-    if h.strip()
-]
 
-# Render hostname (optional)
+def _env_list(name: str, default: str = ""):
+    raw = os.getenv(name, default)
+    return [p.strip() for p in raw.split(",") if p.strip()]
+
+
+ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS", "*")
+
 render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if render_host and render_host not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_host)
@@ -32,10 +30,7 @@ def _env_list(name: str, default: str = ""):
     return [p.strip() for p in raw.split(",") if p.strip()]
 
 
-# CSRF trusted origins (strict). Defaults cover Fly + local. Add Render if you use it.
-CSRF_TRUSTED_ORIGINS = _env_list(
-    "CSRF_TRUSTED_ORIGINS", "https://*.fly.dev,https://localhost,https://127.0.0.1"
-)
+CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS", "https://grad-app.fly.dev")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
