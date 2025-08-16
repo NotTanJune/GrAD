@@ -1,13 +1,20 @@
-# fly.toml for GrAD Django app
-app = "grad-app"
-primary_region = "sin"
+# fly.toml app configuration file generated for grad-app on 2025-08-16T21:35:24+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'grad-app'
+primary_region = 'sin'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
+
+[deploy]
+  release_command = "sh -lc \"python manage.py migrate && python manage.py collectstatic --noinput\""
 
 [env]
-  PORT = "8000"
-  PYTHONUNBUFFERED = "1"
+  PORT = '8000'
+  PYTHONUNBUFFERED = '1'
 
 [http_service]
   internal_port = 8000
@@ -16,19 +23,19 @@ primary_region = "sin"
   auto_start_machines = true
   min_machines_running = 0
 
-  # Optional, but nice to keep one instance busy before spinning a 2nd
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 20
+    type = 'requests'
     hard_limit = 40
+    soft_limit = 20
 
-[[http_service.checks]]
-  grace_period = "10s"
-  interval = "30s"
-  method = "GET"
-  timeout = "5s"
-  path = "/"
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '5s'
+    grace_period = '60s'
+    method = 'GET'
+    path = '/healthz'
 
-[deploy]
-  # Run DB migrations AND collect static at release time (has your secrets/env)
-  release_command = "python manage.py migrate && python manage.py collectstatic --noinput"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

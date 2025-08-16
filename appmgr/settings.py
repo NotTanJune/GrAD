@@ -12,7 +12,7 @@ DEBUG = os.getenv("DEBUG", "0") == "1"
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-not-secret")
 log = logging.getLogger(__name__)
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "grad-app.fly.dev"]
 
 
 def _env_list(name: str, default: str = ""):
@@ -26,18 +26,15 @@ if render_host:
     ALLOWED_HOSTS.append(render_host)
 
 # Add Fly.io hostname
-fly_host = os.getenv("FLY_APP_NAME")
-if fly_host:
-    ALLOWED_HOSTS.append(f"{fly_host}.fly.dev")
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",
+    "grad-app.fly.dev",
 ]
 
 # Add Fly.io CSRF trusted origins
-if fly_host:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{fly_host}.fly.dev")
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
