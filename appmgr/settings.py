@@ -72,7 +72,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "appmgr.urls"
@@ -181,7 +180,3 @@ if _db_url:
     print("Parsed HOST:", DATABASES["default"].get("HOST"))
     print("Parsed PORT:", DATABASES["default"].get("PORT"))
     print("Parsed USER:", DATABASES["default"].get("USER"))
-
-
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG

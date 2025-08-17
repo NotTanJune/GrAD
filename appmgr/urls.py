@@ -9,6 +9,13 @@ def healthz(request):
     return HttpResponse("ok", status=200, content_type="text/plain")
 
 
+# urlpatterns = [
+#     path("healthz", healthz, name="healthz"),
+#     path("accounts/", include("django.contrib.auth.urls")),
+#     path("admin/", admin.site.urls),
+#     path("", include("applications.urls")),
+# ]
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(
@@ -20,7 +27,4 @@ urlpatterns = [
     path("accounts/signup/", app_views.signup, name="signup"),
     path("api/", include("applications.api_urls")),
     path("healthz", healthz, name="healthz"),
-    path("accounts/", include("allauth.urls")),
-    path("mail/connect/", RedirectView.as_view(url="/accounts/social/connections/")),
-    path("notifications/", include("mailwatch.urls", namespace="mailwatch")),
 ]
