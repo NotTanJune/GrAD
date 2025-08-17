@@ -1,0 +1,70 @@
+name: Scan mail on Fly
+
+on:
+  # Run every 15 minutes (UTC). Tweak as you like.
+  schedule:
+    - cron: "*/15 * * * *"
+  # And allow manual runs from the Actions tab.
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "Fly.io region code (leave blank to use default)"
+        required: false
+        default: ""
+      timeout_secs:
+        description: "Max seconds to let the job run"
+        required: false
+        default: "900"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Prevent overlapping runs if one is still going
+  group: scan-mail
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: grad-app               # <-- change if your Fly app name differs
+      DEFAULT_REGION: sin             # <-- optional: your preferred region
+      TIMEOUT_SECS: ${{ github.event.inputs.timeout_secs || '900' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Show flyctl version
+        run: flyctl version
+
+      - name: Pick region (manual input wins)
+        id: pick-region
+        run: |
+          REGION_INPUT="${{ github.event.inputs.region }}"
+          if [ -n "$REGION_INPUT" ]; then
+            echo "REGION=$REGION_INPUT" >> $GITHUB_OUTPUT
+          else
+            echo "REGION=$DEFAULT_REGION" >> $GITHUB_OUTPUT
+          fi
+          echo "Using region: $(cat $GITHUB_OUTPUT)"
+
+      - name: Run one-off scan on Fly Machine
+        run: |
+          # Notes:
+          #  - --restart no : run once and exit
+          #  - --ephemeral  : do not persist the machine
+          #  - --timeout    : fail if it doesn't finish in time (sec)
+          #  - It uses your app's current image + env + secrets.
+          flyctl m run \
+            --app "$FLY_APP" \
+            --region "${{ steps.pick-region.outputs.REGION }}" \
+            --restart no \
+            --ephemeral \
+            --timeout "$TIMEOUT_SECS" \
+            -- sh -lc "python manage.py scan_mail"

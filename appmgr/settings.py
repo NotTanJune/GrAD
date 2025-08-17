@@ -45,10 +45,19 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "django_htmx",
     "applications",
     "storages",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.microsoft",
+    "mailwatch",
 ]
+
+SITE_ID = int(os.getenv("SITE_ID", "1"))
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -60,6 +69,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "appmgr.urls"
@@ -88,6 +98,50 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Singapore"
 USE_I18N = True
 USE_TZ = True
+
+# All auth stuff
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+)
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        # We need a refresh token → ask for offline access explicitly.
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
+            "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
+        },
+        "SCOPE": [
+            "openid",
+            "email",
+            "profile",
+            "https://www.googleapis.com/auth/gmail.readonly",
+        ],
+        "AUTH_PARAMS": {"access_type": "offline", "prompt": "consent"},
+    },
+    "microsoft": {
+        "APP": {
+            "client_id": os.getenv("MS_CLIENT_ID", ""),
+            "secret": os.getenv("MS_CLIENT_SECRET", ""),
+        },
+        # Graph scopes. offline_access is implied, but include for clarity.
+        "SCOPE": [
+            "openid",
+            "email",
+            "profile",
+            "offline_access",
+            "https://graph.microsoft.com/Mail.Read",
+        ],
+        # You can also set "tenant": "common" (default) or your tenant ID.
+        "TENANT": os.getenv("MS_TENANT", "common"),
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_REDIRECT_URL = "applications:dashboard"
@@ -142,3 +196,7 @@ if _db_url:
     print("Parsed HOST:", DATABASES["default"].get("HOST"))
     print("Parsed PORT:", DATABASES["default"].get("PORT"))
     print("Parsed USER:", DATABASES["default"].get("USER"))
+
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
