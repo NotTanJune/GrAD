@@ -16,6 +16,7 @@ urlpatterns = [
     ),
     path("applications/", include("applications.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    path("mail/", include(("mailwatch.urls", "mailwatch"), namespace="mailwatch")),
     path("accounts/signup/", app_views.signup, name="signup"),
     path("api/", include("applications.api_urls")),
     path("healthz", healthz, name="healthz"),

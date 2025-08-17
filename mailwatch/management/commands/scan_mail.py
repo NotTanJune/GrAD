@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from allauth.socialaccount.models import SocialAccount
+from allauth.socialaccount.models import SocialToken
 
 from applications.models import Application  # adjust path if different
 from mailwatch.models import Notification
@@ -128,6 +129,18 @@ class Command(BaseCommand):
         return new_count
 
     # ---------------- Gmail --------------------------------------------------
+
+    def users_with_gmail():
+        # Only users who actually connected Google
+        tokens = SocialToken.objects.filter(account__provider="google").select_related(
+            "account__user"
+        )
+        seen = set()
+        for t in tokens:
+            u = t.account.user
+            if u.pk not in seen:
+                seen.add(u.pk)
+                yield u
 
     def _scan_gmail(
         self,

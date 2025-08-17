@@ -38,26 +38,29 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 # --- Apps ---
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    # django
+    "django.contrib.sites",
+    "django.contrib.messages",
+    "django.contrib.sessions",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "whitenoise.runserver_nostatic",
+    "django.contrib.admin",
     "django.contrib.staticfiles",
-    "django.contrib.sites",
-    "django_htmx",
-    "applications",
-    "storages",
+    # allauth
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.microsoft",
+    # your apps…
+    "applications",
     "mailwatch",
+    "django_htmx",
+    "storages",
+    "whitenoise.runserver_nostatic",
 ]
 
-SITE_ID = int(os.getenv("SITE_ID", "1"))
+SITE_ID = 1
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -100,10 +103,9 @@ USE_I18N = True
 USE_TZ = True
 
 # All auth stuff
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
-ACCOUNT_EMAIL_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"
+ACCOUNT_EMAIL_REQUIRED = True
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
@@ -112,13 +114,7 @@ AUTHENTICATION_BACKENDS = (
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
-        # We need a refresh token → ask for offline access explicitly.
-        "APP": {
-            "client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
-            "secret": os.getenv("GOOGLE_CLIENT_SECRET", ""),
-        },
         "SCOPE": [
-            "openid",
             "email",
             "profile",
             "https://www.googleapis.com/auth/gmail.readonly",
@@ -126,22 +122,11 @@ SOCIALACCOUNT_PROVIDERS = {
         "AUTH_PARAMS": {"access_type": "offline", "prompt": "consent"},
     },
     "microsoft": {
-        "APP": {
-            "client_id": os.getenv("MS_CLIENT_ID", ""),
-            "secret": os.getenv("MS_CLIENT_SECRET", ""),
-        },
-        # Graph scopes. offline_access is implied, but include for clarity.
-        "SCOPE": [
-            "openid",
-            "email",
-            "profile",
-            "offline_access",
-            "https://graph.microsoft.com/Mail.Read",
-        ],
-        # You can also set "tenant": "common" (default) or your tenant ID.
-        "TENANT": os.getenv("MS_TENANT", "common"),
+        "SCOPE": ["offline_access", "User.Read", "Mail.Read"],
     },
 }
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_REDIRECT_URL = "applications:dashboard"

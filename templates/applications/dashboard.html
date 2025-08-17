@@ -1,6 +1,8 @@
 {# templates/applications/dashboard.html #}
 {% extends "base.html" %}
+{% load socialaccount %}
 {% block content %}
+
 
 <div class="mb-6 flex items-center justify-between gap-3">
   <div>
@@ -68,7 +70,7 @@
 
     <div 
       id="notif-panel"
-      hx-get="/notifications/panel/"
+      hx-get="{% url 'mailwatch:panel' %}"
       hx-trigger="load"
       hx-swap="innerHTML"
       class="min-h-[56px]"
@@ -76,6 +78,26 @@
       <div class="opacity-70 text-sm">Loading updates…</div>
     </div>
   </section>
+</div>
+
+<div class="card p-4 mt-4">
+  <h3 class="text-base font-semibold mb-2">Email integration</h3>
+
+  {% if request.user.is_authenticated %}
+    {% if has_gmail_connected %}
+      <button class="btn-ghost" disabled title="Gmail is already connected">
+        Gmail connected
+      </button>
+      <a href="{% url 'socialaccount_connections' %}" class="btn-ghost">What’s connected?</a>
+    {% else %}
+      <a href="{% url 'mailwatch:connect_gmail' %}" class="btn-primary">Connect Gmail</a>
+      <p class="mt-2 text-xs text-slate-500">
+        We’ll only scan for application-related emails after you connect.
+      </p>
+    {% endif %}
+  {% else %}
+    <a href="{% url 'account_login' %}" class="btn-ghost">Sign in to connect Gmail</a>
+  {% endif %}
 </div>
 {{ block.super }}
 

@@ -28,6 +28,7 @@ from .utils_s3 import read_attachment_bytes
 from pdfminer.high_level import extract_text as pdf_extract
 from django.contrib.auth import login as auth_login
 from .forms import DocumentForm, ApplicationCreateForm, SignupForm
+from allauth.socialaccount.models import SocialAccount, SocialToken
 
 
 def home(request):
@@ -163,6 +164,15 @@ def dashboard(request):
         )
     )
 
+    # compute “connected to Gmail”
+    has_gmail_connected = (
+        SocialAccount.objects.filter(user=request.user, provider="google").exists()
+        and SocialToken.objects.filter(
+            account__user=request.user, account__provider="google"
+        ).exists()
+    )
+
+    # (your in-memory status override logic)
     states = get_all_states(request.user.username)
     for a in apps:
         st = states.get(str(a.id))
@@ -171,15 +181,14 @@ def dashboard(request):
 
     status_choices = Application._meta.get_field("status").choices
     notifs = Notification.objects.order_by("-received_at")[:10]
-    return render(
-        request,
-        "applications/dashboard.html",
-        {
-            "apps": apps,
-            "notifs": notifs,
-            "status_choices": status_choices,
-        },
-    )
+
+    context = {
+        "apps": apps,
+        "status_choices": status_choices,
+        "notifs": notifs,
+        "has_gmail_connected": has_gmail_connected,
+    }
+    return render(request, "applications/dashboard.html", context)
 
 
 @login_required
