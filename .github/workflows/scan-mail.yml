@@ -55,13 +55,11 @@ jobs:
         run: |
           # Notes:
           #  - --restart no : run once and exit
-          #  - --ephemeral  : do not persist the machine
           #  - --timeout    : fail if it doesn't finish in time (sec)
           #  - It uses your app's current image + env + secrets.
           flyctl m run \
             --app "$FLY_APP" \
             --region "${{ steps.pick-region.outputs.REGION }}" \
             --restart no \
-            --ephemeral \
             --timeout "$TIMEOUT_SECS" \
             -- sh -lc "python manage.py scan_mail"
