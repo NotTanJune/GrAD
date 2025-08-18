@@ -37,10 +37,10 @@ jobs:
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Show flyctl version
-        run: flyctl version
+      - name: Ensure jq is available
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Pick region (manual input wins)
+      - name: Determine region
         id: pick-region
         run: |
           REGION_INPUT="${{ github.event.inputs.region }}"
@@ -49,21 +49,58 @@ jobs:
           else
             echo "REGION=$DEFAULT_REGION" >> $GITHUB_OUTPUT
           fi
-          echo "Using region: $(grep REGION $GITHUB_OUTPUT | cut -d'=' -f2)"
+
+      - name: Resolve currently deployed image
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$FLY_APP"
+
+          IMG="$(flyctl m list --app "$APP" --json | jq -r '.[0].config.image // empty')"
+
+          if [ -z "$IMG" ] || [ "$IMG" = "null" ]; then
+            IMG="$(flyctl releases --app "$APP" --json | jq -r '.[0].image_ref // empty')"
+          fi
+
+          if [ -z "$IMG" ] || [ "$IMG" = "null" ]; then
+            echo "Could not resolve current image for app $APP" >&2
+            exit 1
+          fi
+
+          echo "image=$IMG" >> $GITHUB_OUTPUT
+          echo "Using image: $IMG"
 
       - name: Run one-off scan on Fly Machine
         shell: bash
         run: |
           set -euo pipefail
-          echo "Starting one-off job on app '$FLY_APP' in region '${{ steps.pick-region.outputs.REGION }}'..."
+
+          APP="$FLY_APP"
+          REGION="${{ steps.pick-region.outputs.REGION }}"
+          IMG="${{ steps.image.outputs.image }}"
+          echo "Starting one-off job on app '$APP' in region '$REGION' with image '$IMG'..."
+
+          if timeout "${TIMEOUT_SECS}s" \
+            flyctl m run "$IMG" \
+              --app "$APP" \
+              --region "$REGION" \
+              --restart no \
+              --rm \
+              python manage.py scan_mail; then
+            echo "Scan finished (direct command)."
+            exit 0
+          fi
+
+          echo "Direct command failed; retrying with overridden entrypoint..."
+
           timeout "${TIMEOUT_SECS}s" \
-          flyctl m run \
-            registry.fly.io/$FLY_APP:current \
-            --app "$FLY_APP" \
-            --region "${{ steps.pick-region.outputs.REGION }}" \
+          flyctl m run "$IMG" \
+            --app "$APP" \
+            --region "$REGION" \
             --restart no \
             --rm \
             --entrypoint python \
             manage.py scan_mail
 
-          echo "Scan finished."
+          echo "Scan finished (entrypoint fallback)."
