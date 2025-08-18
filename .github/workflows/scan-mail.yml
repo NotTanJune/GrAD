@@ -2,7 +2,7 @@ name: Scan mail on Fly
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       region:
@@ -53,13 +53,8 @@ jobs:
 
       - name: Run one-off scan on Fly Machine
         run: |
-          # Notes:
-          #  - --restart no : run once and exit
-          #  - --timeout    : fail if it doesn't finish in time (sec)
-          #  - It uses your app's current image + env + secrets.
           flyctl m run \
             --app "$FLY_APP" \
             --region "${{ steps.pick-region.outputs.REGION }}" \
             --restart no \
-            --timeout "$TIMEOUT_SECS" \
-            -- sh -lc "python manage.py scan_mail"
+            --shell "python manage.py scan_mail"
