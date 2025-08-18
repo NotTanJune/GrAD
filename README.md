@@ -8,6 +8,7 @@
 - Store SOPs, LORs, resumes as text or files.
 - SOP Assistant (Groq Inferencing) to analyze SOPs.
 - Priority field on programs for quick sorting.
+- Tracks email (if connected) for mails from colleges
 
 ### Check out the website - https://grad-app.fly.dev
 
