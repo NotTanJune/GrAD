@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 DEBUG = True
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-not-secret")
 
-
+SITE_ID = 1
 # Uncomment to enable debug logging @github cloners
 # LOGGING = {
 #     "version": 1,
@@ -83,6 +83,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
