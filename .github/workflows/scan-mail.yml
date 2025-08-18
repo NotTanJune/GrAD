@@ -49,12 +49,19 @@ jobs:
           else
             echo "REGION=$DEFAULT_REGION" >> $GITHUB_OUTPUT
           fi
-          echo "Using region: $(cat $GITHUB_OUTPUT)"
+          echo "Using region: $(grep REGION $GITHUB_OUTPUT | cut -d'=' -f2)"
 
       - name: Run one-off scan on Fly Machine
+        shell: bash
         run: |
+          set -euo pipefail
+          echo "Starting one-off job on app '$FLY_APP' in region '${{ steps.pick-region.outputs.REGION }}'..."
+          timeout "${TIMEOUT_SECS}s" \
           flyctl m run \
             --app "$FLY_APP" \
             --region "${{ steps.pick-region.outputs.REGION }}" \
             --restart no \
-            --shell "python manage.py scan_mail"
+            --image "registry.fly.io/$FLY_APP:current" \
+            --command "sh -lc 'python manage.py scan_mail'"
+
+          echo "Scan finished."
