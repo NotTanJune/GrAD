@@ -21,12 +21,10 @@
     </span>
   </td>
 
-  <!-- Status (button + hidden template menu we’ll portal to <body>) -->
   <td class="align-middle px-4">
     <div class="relative status-cell">
-      {# The trigger button #}
       <button type="button"
-              class="status-button inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2
+              class="status-button inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 min-w-0
                      {% if app.status in 'accepted,admit,offer' %} bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 focus:ring-emerald-500
                      {% elif app.status in 'rejected,denied' %} bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/60 focus:ring-red-500
                      {% elif app.status == 'submitted' %} bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200 hover:bg-orange-200 dark:hover:bg-orange-900/60 focus:ring-orange-500
@@ -37,13 +35,12 @@
                      {% else %} bg-slate-100 text-slate-700 dark:bg-slate-800/40 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/60 focus:ring-slate-500 {% endif %}"
               data-app-id="{{ app.id|add:0 }}"
               onclick="openStatusMenu(event)">
-        <span>{{ app.get_status_display|default:app.status }}</span>
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span class="truncate max-w-20">{{ app.get_status_display|default:app.status }}</span>
+        <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
       </button>
 
-      {# A hidden template we’ll clone/portal into <body> so it can overlay rows #}
       <div class="status-menu-template hidden absolute">
         <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 z-[9999] max-h-60 overflow-y-auto">
           <div class="py-1">
@@ -72,12 +69,10 @@
     </div>
   </td>
 
-  <!-- Updated -->
   <td class="text-sm text-slate-600 dark:text-slate-400 align-middle px-4 whitespace-nowrap">
     {{ app.last_updated }}
   </td>
 
-  <!-- Actions -->
   <td class="text-right align-middle px-4">
     <form method="post"
           action="{% url 'applications:application_delete' app.pk %}"

@@ -9,8 +9,29 @@ load_dotenv(BASE_DIR / ".env")
 
 log = logging.getLogger(__name__)
 
-DEBUG = os.getenv("DEBUG", "0").lower() in ("1", "true", "yes")
+DEBUG = True
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-not-secret")
+
+
+# Uncomment to enable debug logging @github cloners
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "handlers": {
+#         "console": {
+#             "class": "logging.StreamHandler",
+#         },
+#     },
+#     "loggers": {
+#         "mailwatch.context_processors": {
+#             "handlers": ["console"],
+#             "level": "INFO",
+#         },
+#         "allauth": {"handlers": ["console"], "level": "DEBUG"},
+#         "allauth.socialaccount": {"handlers": ["console"], "level": "DEBUG"},
+#         "allauth.hook": {"handlers": ["console"], "level": "DEBUG"},
+#     },
+# }
 
 
 def _env_list(name: str, default: str = ""):
@@ -33,12 +54,12 @@ def _env_list(name: str, default: str = ""):
 CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS", "https://grad-app.fly.dev")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 
-# --- Apps ---
+
 INSTALLED_APPS = [
-    # django
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.sessions",
@@ -46,21 +67,17 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.admin",
     "django.contrib.staticfiles",
-    # allauth
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.microsoft",
-    # your apps…
     "applications",
     "mailwatch",
     "django_htmx",
     "storages",
     "whitenoise.runserver_nostatic",
 ]
-
-SITE_ID = 1
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -87,6 +104,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "mailwatch.context_processors.gmail_connection_status",
             ],
         },
     },
@@ -95,13 +113,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "appmgr.wsgi.application"
 ASGI_APPLICATION = "appmgr.asgi.application"
 
-# --- i18n ---
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Singapore"
 USE_I18N = True
 USE_TZ = True
 
-# All auth stuff
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_REQUIRED = True
@@ -111,6 +127,8 @@ AUTHENTICATION_BACKENDS = (
     "allauth.account.auth_backends.AuthenticationBackend",
 )
 
+SOCIALACCOUNT_ADAPTER = "mailwatch.adapters.LoggingSocialAccountAdapter"
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "SCOPE": [
@@ -119,6 +137,7 @@ SOCIALACCOUNT_PROVIDERS = {
             "https://www.googleapis.com/auth/gmail.readonly",
         ],
         "AUTH_PARAMS": {"access_type": "offline", "prompt": "consent"},
+        "OAUTH_PKCE_ENABLED": True,
     },
     "microsoft": {
         "SCOPE": ["offline_access", "User.Read", "Mail.Read"],
@@ -127,19 +146,25 @@ SOCIALACCOUNT_PROVIDERS = {
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = False
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_STORE_TOKENS = True
+
+
 LOGIN_REDIRECT_URL = "applications:dashboard"
 LOGOUT_REDIRECT_URL = "applications:dashboard"
+SOCIALACCOUNT_LOGIN_REDIRECT_URL = "applications:dashboard"
+SOCIALACCOUNT_CONNECT_REDIRECT_URL = "applications:dashboard"
 
-# --- Static files (served by WhiteNoise) ---
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# --- OpenAI (optional) ---
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-# --- AWS S3 for media (attachments) ---
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
@@ -158,7 +183,6 @@ MEDIA_URL = (
     else "/media/"
 )
 
-# --- Database (Supabase / Postgres via DATABASE_URL) ---
 DATABASES = {
     "default": dj_database_url.config(
         env="DATABASE_URL",
@@ -169,14 +193,6 @@ DATABASES = {
 
 _db_url = os.getenv("DATABASE_URL")
 if _db_url:
-    # Ensure sslmode=require in OPTIONS for Supabase pooler
     DATABASES["default"].setdefault("OPTIONS", {})
     DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
-
-# Debug prints: safe in logs
-if _db_url:
-    print("DB URL used by Django:", _db_url)
-    print("Parsed NAME:", DATABASES["default"].get("NAME"))
-    print("Parsed HOST:", DATABASES["default"].get("HOST"))
-    print("Parsed PORT:", DATABASES["default"].get("PORT"))
-    print("Parsed USER:", DATABASES["default"].get("USER"))
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True

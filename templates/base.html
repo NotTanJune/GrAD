@@ -133,7 +133,9 @@
     {% if messages %}
       <div class="space-y-2 mb-4">
         {% for m in messages %}
-          <div class="card px-4 py-3 text-sm border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/70 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200">{{ m }}</div>
+          {% ifchanged m.message m.tags %}
+            <div class="card px-4 py-3 text-sm border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/70 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200">{{ m }}</div>
+          {% endifchanged %}
         {% endfor %}
       </div>
     {% endif %}

@@ -7,7 +7,7 @@
 <div class="mb-6 flex items-center justify-between gap-3">
   <div>
     <h1 class="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
-    <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Track applications, reorder priorities, and update statuses.</p>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Track applications, Connect Gmail, and get notified of new emails.</p>
   </div>
   <a href="/applications/new/" class="btn-primary mt-2 md:mt-0 shadow-lg hover:shadow-xl">
     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -25,7 +25,7 @@
       </div>
     </div>
 
-    <div class="relative overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm scroll-hint">
+    <div class="relative overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
       <table class="w-full min-w-[720px] text-sm">
         <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
           <tr class="text-left">
@@ -53,10 +53,27 @@
     </div>
   </section>
 
-  <section class="card p-6 md:p-8">
+  <section class="card p-6 md:p-8 md:col-span-1">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">Email integration</h2>
+    </div>
+
+    {% if request.user.is_authenticated %}
+      {% if has_gmail_connected %}
+        <button class="btn-ghost opacity-50 cursor-not-allowed mb-2" disabled title="Gmail is already connected">Gmail connected</button>
+        <a href="{% url 'socialaccount_connections' %}" class="btn-primary">Manage Connections</a>
+      {% else %}
+        <a href="{% url 'mailwatch:connect_gmail' %}" class="btn-primary">Connect Gmail</a>
+        <p class="mt-2 text-xs text-slate-500">We'll only scan for application-related emails after you connect.</p>
+      {% endif %}
+    {% else %}
+      <a href="{% url 'account_login' %}" class="btn-ghost">Sign in to connect Gmail</a>
+    {% endif %}
+  </section>
+
+  <section class="card p-6 md:p-8 md:col-span-2">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Latest Notifications</h2>
-      <span class="badge bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">coming soon</span>
     </div>
 
     <div 
@@ -70,44 +87,21 @@
     </div>
   </section>
 </div>
-
-<div class="card p-4 mt-4">
-  <h3 class="text-base font-semibold mb-2">Email integration</h3>
-
-  {% if request.user.is_authenticated %}
-    {% if has_gmail_connected %}
-      <button class="btn-ghost" disabled title="Gmail is already connected">
-        Gmail connected
-      </button>
-      <a href="{% url 'socialaccount_connections' %}" class="btn-ghost">What’s connected?</a>
-    {% else %}
-      <a href="{% url 'mailwatch:connect_gmail' %}" class="btn-primary">Connect Gmail</a>
-      <p class="mt-2 text-xs text-slate-500">
-        We’ll only scan for application-related emails after you connect.
-      </p>
-    {% endif %}
-  {% else %}
-    <a href="{% url 'account_login' %}" class="btn-ghost">Sign in to connect Gmail</a>
-  {% endif %}
-</div>
 {{ block.super }}
 
 <script>
-  /* ---------- CSRF helper ---------- */
   function getCookie(name){
     const v = `; ${document.cookie}`;
     const p = v.split(`; ${name}=`);
     if (p.length === 2) return p.pop().split(';').shift();
   }
 
-  /* ---------- Status menu: portal to <body> so it overlays rows ---------- */
   function openStatusMenu(evt){
     const btn = evt.currentTarget;
     const cell = btn.closest('.status-cell');
     const tmpl = cell.querySelector('.status-menu-template');
     if (!tmpl) return;
 
-    // clone the menu and move to body
     const menu = tmpl.firstElementChild.cloneNode(true);
     menu.classList.remove('hidden');
     menu.style.position = 'fixed';
@@ -117,27 +111,22 @@
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    // initial placement below button
     let left = rect.left;
     let top  = rect.bottom + 6;
 
-    // ensure min width = btn width
     menu.style.minWidth = rect.width + 'px';
 
     document.body.appendChild(menu);
 
-    // flip up if overflowing bottom
     const menuH = menu.offsetHeight;
     if (top + menuH > vh - 8) top = Math.max(8, rect.top - menuH - 6);
 
-    // keep within viewport horizontally
     const menuW = menu.offsetWidth;
     if (left + menuW > vw - 8) left = Math.max(8, vw - menuW - 8);
 
     menu.style.left = left + 'px';
     menu.style.top  = top  + 'px';
 
-    // click outside to close
     const backdrop = document.createElement('div');
     backdrop.className = 'fixed inset-0 z-[9998]';
     document.body.appendChild(backdrop);
@@ -152,7 +141,6 @@
     window.addEventListener('resize', close);
     window.addEventListener('scroll', close, true);
 
-    // handle selection (event delegation)
     menu.addEventListener('click', function(e){
       const opt = e.target.closest('[data-value]');
       if (!opt) return;
@@ -161,7 +149,6 @@
     }, { once:false });
   }
 
-  /* ---------- Update status (kept from your current logic) ---------- */
   async function updateStatus(newStatus, buttonEl){
     const row = (buttonEl ? buttonEl.closest('tr') : event.target.closest('tr'));
     const appId = row.dataset.id;

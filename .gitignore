@@ -4,3 +4,4 @@ auth_fixture.json
 db.sqllite3
 reset_db.py
 Makefile
+server.log
