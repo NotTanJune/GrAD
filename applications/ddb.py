@@ -12,9 +12,7 @@ from botocore.exceptions import (
 )
 
 REGION = os.getenv("AWS_S3_REGION_NAME", "ap-southeast-1")
-TABLE = os.getenv(
-    "APPMGR_DDB_TABLE", "emergency-hackathon"
-)  # expected PK: username (S)
+TABLE = os.getenv("APPMGR_DDB_TABLE", "emergency-hackathon")
 
 # -------- feature toggle / availability checks --------
 
@@ -37,7 +35,6 @@ def _to_int(v: Any, default: int) -> int:
         return default
 
 
-# Lazily create clients/tables so an import doesn’t explode without creds
 _ddb = None
 _tbl = None
 
@@ -49,9 +46,6 @@ def _get_tbl():
     if not _tbl:
         _tbl = _ddb.Table(TABLE)
     return _tbl
-
-
-# -------- helpers to swallow infra errors in prod --------
 
 
 def _safe_ddb(call, *, default=None):
@@ -70,12 +64,7 @@ def _safe_ddb(call, *, default=None):
         BotoCoreError,
         Exception,
     ):
-        # You can add logging here if you want:
-        # import logging; logging.getLogger(__name__).exception("DDB error")
         return default
-
-
-# -------------------- getters --------------------
 
 
 def get_all_states(username: str) -> Dict[str, Dict[str, Any]]:
@@ -92,9 +81,6 @@ def get_all_states(username: str) -> Dict[str, Dict[str, Any]]:
 
 def get_state(username: str, app_id: int) -> Optional[Dict[str, Any]]:
     return get_all_states(username).get(str(app_id))
-
-
-# -------------------- core writer --------------------
 
 
 def upsert_app_map(username: str, app_id: int, *, status: str, priority: int) -> None:
@@ -147,9 +133,6 @@ def upsert_app_map(username: str, app_id: int, *, status: str, priority: int) ->
     _safe_ddb(_do, default=None)
 
 
-# -------------------- friendly ops --------------------
-
-
 def put_state(username: str, app_id: int, status: str, priority: int) -> None:
     upsert_app_map(username, app_id, status=status, priority=priority)
 
@@ -182,9 +165,6 @@ def delete_state(username: str, app_id: int) -> None:
         )
 
     _safe_ddb(_do, default=None)
-
-
-# -------------------- view helper --------------------
 
 
 def overlay_states(username: str, app_objs: list) -> None:

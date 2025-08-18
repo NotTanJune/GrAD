@@ -29,13 +29,12 @@ class Notification(models.Model):
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-    # 👇 add a unique related_name to avoid clashing with applications.Notification
     application = models.ForeignKey(
         "applications.Application",
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name="mailwatch_notifications",  # <— the fix
+        related_name="mailwatch_notifications",
     )
 
     source = models.CharField(max_length=16, choices=SOURCE_CHOICES)

@@ -1,11 +1,11 @@
-# mailwatch/management/commands/seed_dummy_notification.py
+"""Seed a dummy Mailwatch Notification conforming to current model fields."""
+
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 import uuid
 
-# Adjust these imports / field names to match your project
 from applications.models import Application
 from mailwatch.models import Notification
 
@@ -31,10 +31,12 @@ class Command(BaseCommand):
             "--snippet",
             default="We have received your documents and will update you soon.",
         )
+        parser.add_argument("--source", default="gmail", help="gmail | outlook | mock")
         parser.add_argument(
-            "--provider", default="gmail", help="gmail | outlook | mock"
+            "--sender",
+            default="admissions@example.edu",
+            help="Sender display/email to show in UI",
         )
-        parser.add_argument("--url", default="https://example.edu/portal/inbox/123")
         parser.add_argument(
             "--app-id", type=int, help="Optional: specific Application.pk to link."
         )
@@ -48,8 +50,6 @@ class Command(BaseCommand):
             user = User.objects.get(email__iexact=opts["email"])
         except User.DoesNotExist:
             raise CommandError(f"No user found with email {opts['email']}")
-
-        # Pick an application to attach to
         app = None
         if opts["app_id"]:
             app = Application.objects.filter(pk=opts["app_id"], user=user).first()
@@ -67,23 +67,21 @@ class Command(BaseCommand):
 
         external_id = f"dummy-{uuid.uuid4().hex[:12]}"
 
-        # ⚠️ Match these field names to your Notification model
         notif = Notification.objects.create(
             user=user,
-            application=app,  # okay if None (general inbox)
-            provider=opts["provider"],  # e.g. "gmail"
-            external_id=external_id,  # or message_id if that's your field
+            application=app,
+            source=opts["source"],
+            external_message_id=external_id,
             subject=opts["subject"],
-            snippet=opts["snippet"],  # or preview/body_preview
-            url=opts["url"],  # or link_url
-            received_at=timezone.now(),
-            unread=True,  # or is_read=False
-            raw={"mock": True},  # if you have a JSONField
+            sender=opts["sender"],
+            snippet=opts["snippet"],
+            sent_at=timezone.now(),
+            is_read=False,
         )
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Created notification #{notif.pk} for {user.email} "
-                f"(app={app.pk if app else 'None'}) external_id={external_id}"
+                f"(app={app.pk if app else 'None'}) external_message_id={external_id}"
             )
         )

@@ -12,7 +12,7 @@ from django.utils import timezone
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.models import SocialToken
 
-from applications.models import Application  # adjust path if different
+from applications.models import Application
 from mailwatch.models import Notification
 from mailwatch.utils import (
     PROVIDER_GOOGLE,
@@ -84,8 +84,6 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"Scan complete. New notifications: {total_new}")
         )
 
-    # ------------------------------------------------------------------------
-
     def scan_user(
         self, user: User, *, days: int, max_per_app: int, dry_run: bool
     ) -> int:
@@ -99,7 +97,6 @@ class Command(BaseCommand):
             log.info("User %s: no active applications. Skipping.", user)
             return 0
 
-        # Build keywords per app for matching
         per_app_keywords: Dict[int, List[str]] = {}
         for a in apps:
             words = []
@@ -109,7 +106,6 @@ class Command(BaseCommand):
                 words.append(a["program_name"])
             per_app_keywords[a["id"]] = [w for w in words if w]
 
-        # Providers connected?
         providers = set(
             SocialAccount.objects.filter(user=user).values_list("provider", flat=True)
         )
@@ -128,10 +124,7 @@ class Command(BaseCommand):
                 new_count += self._scan_outlook(user, per_app_keywords, dry_run)
         return new_count
 
-    # ---------------- Gmail --------------------------------------------------
-
     def users_with_gmail():
-        # Only users who actually connected Google
         tokens = SocialToken.objects.filter(account__provider="google").select_related(
             "account__user"
         )
@@ -156,9 +149,6 @@ class Command(BaseCommand):
         for app_id, kws in per_app_keywords.items():
             if not kws:
                 continue
-            # Simple Gmail search: look back N days and search for either keyword
-            # Example: newer_than:30d ("Stanford" OR "Computer Science")
-            # Keep the query small and robust to quotes
             terms = " OR ".join(f'"{k.replace("\"", "")}"' for k in kws)
             q = f"newer_than:{int(days)}d ({terms})"
             try:
@@ -188,8 +178,6 @@ class Command(BaseCommand):
 
         return created
 
-    # ---------------- Outlook / Microsoft Graph -----------------------------
-
     def _scan_outlook(
         self,
         user: User,
@@ -216,12 +204,9 @@ class Command(BaseCommand):
                     )
         return created
 
-    # ---------------- Write Notification (dedup by message id) --------------
-
     def _maybe_create_notification(
         self, *, user: User, app_id: int, msg: InboxMessage, dry_run: bool
     ) -> int:
-        # Dedup by provider message id first, then by internetMessageId (if present)
         exists = Notification.objects.filter(
             user=user,
             application_id=app_id,

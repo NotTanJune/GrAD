@@ -113,7 +113,6 @@ class Notification(models.Model):
         return f"{self.received_at:%Y-%m-%d} | {self.subject[:60]}"
 
 
-# comment
 class Attachment(models.Model):
     DOC_TYPES = [
         ("SOP", "Statement of Purpose"),

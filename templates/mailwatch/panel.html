@@ -12,7 +12,17 @@
             {% endif %}
           </div>
           <div class="min-w-0">
-            <div class="font-medium truncate">{{ n.subject|default:"(no subject)" }}</div>
+            <div class="font-medium truncate">
+              {% if n.source == 'gmail' and n.external_message_id %}
+                {# Open Gmail search for RFC822 Message-ID #}
+                <a class="underline hover:no-underline" target="_blank" rel="noopener"
+                   href="https://mail.google.com/mail/u/0/#search/rfc822msgid:{{ n.external_message_id|urlencode }}">
+                  {{ n.subject|default:"(no subject)" }}
+                </a>
+              {% else %}
+                {{ n.subject|default:"(no subject)" }}
+              {% endif %}
+            </div>
             <div class="text-xs text-slate-500 dark:text-slate-400 truncate">
               {{ n.sender|default:"(unknown sender)" }}
               {% if n.application %} • matched: <span class="italic">{{ n.application.college_name }}</span>{% endif %}

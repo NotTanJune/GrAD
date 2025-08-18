@@ -6,7 +6,22 @@
   <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Create the application, then upload SOP/LOR and other documents.</p>
 </div>
 
-<!-- Create form -->
+{% if messages %}
+  {% for message in messages %}
+    {% if message.tags == 'success' %}
+      <div id="success-notification" class="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <div class="flex items-center gap-2">
+          <svg class="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <p class="text-sm text-green-700 dark:text-green-300">{{ message }}</p>
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% if not app %}
 <form method="post" class="card p-6 md:p-8 space-y-6 max-w-2xl">
   {% csrf_token %}
   <div>
@@ -26,9 +41,6 @@
     {{ form.notes }}
   </div>
   <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-    <svg class="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-    </svg>
     <p class="text-sm text-blue-700 dark:text-blue-300">Status will be set to <b>Submitted</b> after you save.</p>
   </div>
   <button class="btn-primary py-3 text-base font-semibold shadow-lg hover:shadow-xl">
@@ -38,9 +50,41 @@
     Create Application
   </button>
 </form>
+{% else %}
+<div class="grid md:grid-cols-2 gap-6">
+  <form method="post" class="card p-6 md:p-8 space-y-6">
+    {% csrf_token %}
+    <div>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">College Name</label>
+      {{ form.college_name }}
+    </div>
+    <div>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Program Name</label>
+      {{ form.program_name }}
+    </div>
+    <div>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Portal URL</label>
+      {{ form.portal_url }}
+    </div>
+    <div>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Notes</label>
+      {{ form.notes }}
+    </div>
+    <div class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+      <svg class="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 0 0118 0z"></path>
+      </svg>
+      <p class="text-sm text-blue-700 dark:text-blue-300">Status will be set to <b>Submitted</b> after you save.</p>
+    </div>
+    <button class="btn-primary py-3 text-base font-semibold shadow-lg hover:shadow-xl">
+      <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      Create Application
+    </button>
+  </form>
 
-{% if app %}
-  <div class="grid md:grid-cols-2 gap-6 mt-8">
+  <div class="space-y-6">
     <!-- SOP -->
     <section class="card p-6 md:p-8">
       <div class="flex items-center gap-3 mb-4">
@@ -56,9 +100,6 @@
       </div>
       <div class="space-y-4">
         <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
           Accepted: PDF, DOC, DOCX, TXT
         </div>
         <input id="sop-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
@@ -89,9 +130,6 @@
       </div>
       <div class="space-y-4">
         <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
           Accepted: PDF, DOC, DOCX, TXT
         </div>
         <input id="lor-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
@@ -107,104 +145,115 @@
       </div>
     </section>
   </div>
+</div>
+{% endif %}
 
-  <!-- Upload both -->
-  <div class="mt-6">
-    <button id="btn-upload-all" class="btn-ghost w-full py-3" onclick="uploadAll()" disabled>
-      <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+{% if app %}
+<div class="mt-6">
+  <button id="btn-upload-all" class="btn-ghost w-full py-3" onclick="uploadAll()" disabled>
+    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+    </svg>
+    Upload All Documents
+  </button>
+  <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">Enabled when both SOP and LOR have files selected.</div>
+</div>
+
+<section class="card p-6 md:p-8 mt-8">
+  <div class="flex items-center gap-3 mb-6">
+    <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+      <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
       </svg>
-      Upload All Documents
-    </button>
-    <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">Enabled when both SOP and LOR have files selected.</div>
+    </div>
+    <div>
+      <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Other Documents</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400">Resume, CV, or any additional files</p>
+    </div>
   </div>
-
-  <!-- Other docs -->
-  <section class="card p-6 md:p-8 mt-8">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-        <svg class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+  <div class="space-y-4">
+    <div class="flex flex-col sm:flex-row gap-3">
+      <select id="other-type"
+              class="w-full sm:w-auto rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                     text-sm p-4 pr-8 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+        <option value="RESUME">Resume/CV</option>
+        <option value="OTHER">Other</option>
+      </select>
+      <input id="other-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
+             class="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
+                    text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+      <button id="btn-upload-other" class="btn-primary px-6 inline-flex items-center gap-2" onclick="multiUploadOther()">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
         </svg>
-      </div>
-      <div>
-        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Other Documents</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400">Resume, CV, or any additional files</p>
-      </div>
+        Upload
+      </button>
     </div>
-    <div class="space-y-4">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <select id="other-type"
-                class="w-full sm:w-auto rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
-                       text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
-          <option value="RESUME">Resume/CV</option>
-          <option value="OTHER">Other</option>
-        </select>
-        <input id="other-files" type="file" multiple accept=".pdf,.doc,.docx,.txt"
-               class="w-full rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900
-                      text-sm p-3 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
-        <button id="btn-upload-other" class="btn-primary px-6" onclick="multiUploadOther()">
-          <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-          </svg>
-          Upload
-        </button>
-      </div>
-      <div id="other-status" class="text-sm text-slate-600 dark:text-slate-300"></div>
-    </div>
-  </section>
+    <div id="other-status" class="text-sm text-slate-600 dark:text-slate-300"></div>
+  </div>
+</section>
 
-  <!-- Attachments list -->
-  <section class="card p-6 md:p-8 mt-8">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Attachments</h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400">{{ app.college_name }} / {{ app.program_name }}</p>
-      </div>
+<section class="card p-6 md:p-8 mt-8">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Attachments</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400">{{ app.college_name }} / {{ app.program_name }}</p>
     </div>
-    <ul id="attachments-list" class="space-y-3">
-      {% for a in app.attachments.all %}
-        <li class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 hover:shadow-sm transition-shadow">
-          <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-            <svg class="h-4 w-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div class="flex-1">
-            <span class="badge text-xs">{{ a.doc_type }}</span>
-            <span class="font-medium text-slate-900 dark:text-slate-100 ml-2">{{ a.title }}</span>
-          </div>
-          <a class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors" href="{% url 'applications:attachment_download' a.id %}">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-            </svg>
-            View
-          </a>
-        </li>
-      {% empty %}
-        <li id="attachments-empty" class="text-center py-8 text-slate-500 dark:text-slate-400">
-          <svg class="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  </div>
+  <ul id="attachments-list" class="space-y-3">
+    {% for a in app.attachments.all %}
+      <li class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 hover:shadow-sm transition-shadow">
+        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+          <svg class="h-4 w-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
-          <p class="text-sm">No files uploaded yet</p>
-          <p class="text-xs mt-1">Upload your documents above to get started</p>
-        </li>
-      {% endfor %}
-    </ul>
-
-    <!-- Big finish button at end -->
-    <div class="mt-8 text-right">
-      <a href="{% url 'applications:dashboard' %}" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </div>
+        <div class="flex-1">
+          <span class="badge text-xs">{{ a.doc_type }}</span>
+          <span class="font-medium text-slate-900 dark:text-slate-100 ml-2">{{ a.title }}</span>
+        </div>
+        <a class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors" href="{% url 'applications:attachment_download' a.id %}">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+          </svg>
+          View
+        </a>
+      </li>
+    {% empty %}
+      <li id="attachments-empty" class="text-center py-8 text-slate-500 dark:text-slate-400">
+        <svg class="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
-        Finish
-      </a>
-    </div>
-  </section>
+        <p class="text-sm">No files uploaded yet</p>
+        <p class="text-xs mt-1">Upload your documents above to get started</p>
+      </li>
+    {% endfor %}
+  </ul>
 
-  <script>
+  <div class="mt-8 text-right">
+    <a href="{% url 'applications:dashboard' %}" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-lg hover:-translate-y-0.5 hover:shadow-xl transition">
+      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      Finish
+    </a>
+  </div>
+</section>
+{% endif %}
+
+<script>
+  const successNotification = document.getElementById('success-notification');
+  if (successNotification) {
+    setTimeout(() => {
+      successNotification.style.transition = 'opacity 0.5s ease-out';
+      successNotification.style.opacity = '0';
+      setTimeout(() => {
+        successNotification.remove();
+      }, 500);
+    }, 5000);
+  }
+
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -324,29 +373,27 @@
   }
 
   function updateButtons() {
-    const sopHas = (document.getElementById('sop-files').files?.length || 0) > 0;
-    const lorHas = (document.getElementById('lor-files').files?.length || 0) > 0;
+    const sopHas = (document.getElementById('sop-files')?.files?.length || 0) > 0;
+    const lorHas = (document.getElementById('lor-files')?.files?.length || 0) > 0;
 
-    document.getElementById('btn-upload-sop').disabled = !sopHas;
-    document.getElementById('btn-upload-lor').disabled = !lorHas;
+    const btnSop = document.getElementById('btn-upload-sop');
+    const btnLor = document.getElementById('btn-upload-lor');
+    const btnAll = document.getElementById('btn-upload-all');
 
-    if (sopHas && !lorHas) document.getElementById('btn-upload-lor').disabled = true;
-    if (lorHas && !sopHas) document.getElementById('btn-upload-sop').disabled = true;
+    if (btnSop) btnSop.disabled = !sopHas;
+    if (btnLor) btnLor.disabled = !lorHas;
+    if (btnAll) btnAll.disabled = !(sopHas && lorHas);
 
-    const all = document.getElementById('btn-upload-all');
-    all.disabled = !(sopHas && lorHas);
-
-    ['btn-upload-sop','btn-upload-lor','btn-upload-all'].forEach(id => {
-      const b = document.getElementById(id);
+    [btnSop, btnLor, btnAll].forEach(b => {
+      if (!b) return;
       b.classList.toggle('opacity-50', b.disabled);
       b.classList.toggle('cursor-not-allowed', b.disabled);
     });
   }
 
-  document.getElementById('sop-files').addEventListener('change', updateButtons);
-  document.getElementById('lor-files').addEventListener('change', updateButtons);
+  document.getElementById('sop-files')?.addEventListener('change', updateButtons);
+  document.getElementById('lor-files')?.addEventListener('change', updateButtons);
   updateButtons();
-  </script>
-{% endif %}
+</script>
 
 {% endblock %}

@@ -12,11 +12,6 @@
         {{ form.errors|striptags }}
       </div>
     {% endif %}
-
-    <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Username</label>
-      {{ form.username }}
-    </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
       {{ form.email }}
@@ -73,7 +68,6 @@ function togglePwd(inputId, btn){
   if (!input) return;
   var isPw = input.getAttribute('type') === 'password';
   input.setAttribute('type', isPw ? 'text' : 'password');
-  // toggle icons
   var off = btn.querySelector('.icon-off');
   var on = btn.querySelector('.icon-on');
   if (isPw){

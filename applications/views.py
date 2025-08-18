@@ -47,8 +47,6 @@ def delete_application(request, pk):
     is_htmx = request.headers.get("HX-Request", "").lower() == "true" or bool(
         request.META.get("HTTP_HX_REQUEST")
     )
-    # Be defensive to avoid surfacing a 404 page to htmx requests.
-    # If not found, return an empty response so the row can be swapped out gracefully.
     app = Application.objects.filter(pk=pk).first()
     if app is None:
         if is_htmx:
@@ -64,7 +62,6 @@ def delete_application(request, pk):
         messages.error(request, "You are not allowed to delete that application.")
         return redirect("applications:dashboard")
 
-    # Delete any S3 files for attachments
     aws_region = os.getenv("AWS_S3_REGION_NAME", "ap-southeast-1")
     bucket = os.getenv("AWS_STORAGE_BUCKET_NAME")
     if bucket:
@@ -164,7 +161,6 @@ def dashboard(request):
         )
     )
 
-    # compute “connected to Gmail”
     has_gmail_connected = (
         SocialAccount.objects.filter(user=request.user, provider="google").exists()
         and SocialToken.objects.filter(
@@ -172,7 +168,6 @@ def dashboard(request):
         ).exists()
     )
 
-    # (your in-memory status override logic)
     states = get_all_states(request.user.username)
     for a in apps:
         st = states.get(str(a.id))
@@ -241,6 +236,7 @@ def application_update_status(request, pk):
                 new_status,
                 priority=getattr(app, "priority", 999),
             )
+
     status_choices = Application._meta.get_field("status").choices
     return render(
         request,
@@ -423,7 +419,11 @@ def signup(request):
         form = SignupForm(request.POST)
         if form.is_valid():
             user = form.save()
-            auth_login(request, user)
+            auth_login(
+                request,
+                user,
+                backend="django.contrib.auth.backends.ModelBackend",
+            )
             return redirect("applications:dashboard")
     else:
         form = SignupForm()

@@ -19,7 +19,6 @@ PROVIDER_GOOGLE = "google"
 PROVIDER_MICROSOFT = "microsoft"
 
 
-# ----- Simple message shape we pass around -----------------------------------
 @dataclass
 class InboxMessage:
     provider: str  # "gmail" | "outlook"
@@ -29,9 +28,6 @@ class InboxMessage:
     sender: str  # display or email
     snippet: str  # teaser text
     sent_at: dt.datetime  # timezone-aware UTC
-
-
-# ======== Allauth Token helpers =============================================
 
 
 def _get_social(user, provider: str) -> Tuple[SocialAccount, SocialApp, SocialToken]:
@@ -47,9 +43,7 @@ def _get_social(user, provider: str) -> Tuple[SocialAccount, SocialApp, SocialTo
 
 def _is_expired(token: SocialToken) -> bool:
     if not token.expires_at:
-        # Some providers give long-lived tokens; treat missing as not expired
         return False
-    # Consider a small skew
     return timezone.now() + dt.timedelta(seconds=30) >= token.expires_at
 
 
@@ -139,9 +133,6 @@ def get_access_token(user, provider: str) -> str:
     return token.token
 
 
-# ======== Gmail (REST) ======================================================
-
-
 def gmail_search_messages(
     access_token: str, query: str, max_results: int = 10
 ) -> List[str]:
@@ -204,9 +195,6 @@ def gmail_get_message(access_token: str, msg_id: str) -> InboxMessage:
     )
 
 
-# ======== Microsoft Graph (Outlook) ========================================
-
-
 def graph_list_recent(access_token: str, top: int = 25) -> List[Dict]:
     """
     Return a list of recent messages (lightweight projection).
@@ -253,9 +241,6 @@ def graph_to_inbox_message(raw: Dict) -> InboxMessage:
     )
 
 
-# ======== Matching helper ===================================================
-
-
 def likely_matches(subject: str, sender: str, keywords: Iterable[str]) -> bool:
     """
     Very simple heuristic: if any keyword appears in subject or sender (case-insensitive).
@@ -267,3 +252,12 @@ def likely_matches(subject: str, sender: str, keywords: Iterable[str]) -> bool:
         if k and (k in subj or k in snd):
             return True
     return False
+
+
+def create_social_token(account):
+    token = SocialToken.objects.create(
+        app=SocialApp.objects.get(provider=account.provider),
+        account=account,
+        token=account.extra_data["access_token"],
+    )
+    return token
