@@ -11,6 +11,13 @@ def healthz(request):
     return HttpResponse("ok", status=200, content_type="text/plain")
 
 
+# urlpatterns = [
+#     path("healthz", healthz, name="healthz"),
+#     path("accounts/", include("django.contrib.auth.urls")),
+#     path("admin/", admin.site.urls),
+#     path("", include("applications.urls")),
+# ]
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(
